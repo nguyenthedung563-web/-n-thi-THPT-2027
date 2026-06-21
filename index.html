@@ -3,570 +3,669 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Thu thập đề thi</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/SheetJS/0.18.5/xlsx.full.min.js"></script>
+<title>Quét Đề Thi → Google Sheets</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.4/tesseract.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
-  :root{
-    --bg:#f6f4ee; --ink:#1f2421; --paper:#ffffff; --line:#d8d3c4;
-    --accent:#b5562f; --accent2:#2f5d50; --muted:#7a766a;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--ink);}
-  header{padding:28px 32px 18px;border-bottom:2px solid var(--ink);}
-  header h1{margin:0 0 4px;font-size:1.6rem;letter-spacing:.5px}
-  header p{margin:0;color:var(--muted);font-size:.95rem}
-  .tabs{display:flex;gap:6px;padding:14px 32px 0;flex-wrap:wrap}
-  .tab-btn{padding:10px 18px;border:1px solid var(--line);background:var(--paper);cursor:pointer;
-    border-bottom:none;border-radius:6px 6px 0 0;font-size:.9rem;color:var(--muted)}
-  .tab-btn.active{background:var(--ink);color:#fff;border-color:var(--ink)}
-  .panel{display:none;background:var(--paper);margin:0 32px;padding:24px;border:1px solid var(--line);
-    border-radius:0 6px 6px 6px}
-  .panel.active{display:block}
-  .row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;align-items:flex-end}
-  label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:4px}
-  input[type=text],input[type=url],input[type=number],select,textarea{
-    padding:8px 10px;border:1px solid var(--line);border-radius:4px;font-size:.92rem;width:100%;
-    font-family:inherit}
-  textarea{resize:vertical;min-height:60px}
-  button{padding:9px 16px;border:none;border-radius:4px;background:var(--accent);color:#fff;
-    cursor:pointer;font-size:.88rem}
-  button.secondary{background:var(--accent2)}
-  button.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
-  button:hover{filter:brightness(1.08)}
-  .hint{font-size:.78rem;color:var(--muted);margin-top:4px}
-  .preview-grid{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
-  .preview-grid img{width:110px;height:110px;object-fit:cover;border-radius:6px;border:1px solid var(--line)}
-  table{width:100%;border-collapse:collapse;margin-top:18px;font-size:.85rem}
-  th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
-  th{background:var(--ink);color:#fff;font-weight:500}
-  td[contenteditable=true]{min-width:80px}
-  td[contenteditable=true]:focus{outline:2px solid var(--accent2)}
-  .toolbar{display:flex;justify-content:space-between;align-items:center;margin:18px 32px 6px;flex-wrap:wrap;gap:10px}
-  .toolbar small{color:var(--muted)}
-  .status{margin:0 32px;font-size:.85rem;color:var(--accent2)}
-  footer{margin:30px 0;text-align:center;color:var(--muted);font-size:.78rem}
-  .config-box{margin:0 32px 18px;padding:14px 18px;background:#fff8ec;border:1px solid #e8d9b8;border-radius:6px;font-size:.85rem}
-  .config-box code{background:#fff;padding:1px 5px;border-radius:3px;border:1px solid var(--line)}
+:root{
+  --paper:#f6f3ec;
+  --ink:#1c1f1a;
+  --ink-soft:#4a4f44;
+  --rule:#c9c2ae;
+  --bubble:#2f5d4f;
+  --bubble-fill:#2f5d4f;
+  --correct:#2f5d4f;
+  --correct-bg:#e3ebe5;
+  --warn:#8a3b2b;
+  --warn-bg:#f3e3dd;
+  --accent:#c0521f;
+  --card:#fffdf8;
+  --shadow:0 1px 0 rgba(28,31,26,0.06);
+  --mono:'JetBrains Mono','Courier New',monospace;
+  --serif:'Source Serif 4','Georgia',serif;
+  --sans:'IBM Plex Sans','Helvetica Neue',Arial,sans-serif;
+}
+
+*{box-sizing:border-box;}
+html{-webkit-font-smoothing:antialiased;}
+body{
+  margin:0;
+  background:var(--paper);
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(28,31,26,0.06) 1px, transparent 0);
+  background-size:22px 22px;
+  color:var(--ink);
+  font-family:var(--sans);
+  min-height:100vh;
+}
+
+@font-face{
+  font-family:'Source Serif 4';
+  src:local('Source Serif 4');
+}
+
+/* ===== Top bar ===== */
+.topbar{
+  border-bottom:2px solid var(--ink);
+  background:var(--paper);
+  position:sticky;
+  top:0;
+  z-index:50;
+}
+.topbar-inner{
+  max-width:1180px;
+  margin:0 auto;
+  padding:18px 24px;
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:16px;
+  flex-wrap:wrap;
+}
+.brand{
+  display:flex;
+  align-items:baseline;
+  gap:10px;
+}
+.brand-mark{
+  font-family:var(--mono);
+  font-size:12px;
+  letter-spacing:0.12em;
+  border:1.5px solid var(--ink);
+  border-radius:3px;
+  padding:3px 7px;
+  color:var(--ink);
+}
+.brand-name{
+  font-family:var(--serif);
+  font-size:22px;
+  font-weight:600;
+  letter-spacing:-0.01em;
+}
+.brand-sub{
+  font-family:var(--mono);
+  font-size:11.5px;
+  color:var(--ink-soft);
+  letter-spacing:0.03em;
+}
+.status-pill{
+  font-family:var(--mono);
+  font-size:11.5px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 12px;
+  border:1.5px solid var(--rule);
+  border-radius:20px;
+  background:var(--card);
+}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--warn);flex:none;}
+.dot.on{background:var(--correct);}
+
+/* ===== Layout ===== */
+.wrap{
+  max-width:1180px;
+  margin:0 auto;
+  padding:32px 24px 80px;
+  display:grid;
+  grid-template-columns:1fr;
+  gap:28px;
+}
+@media(min-width:980px){
+  .wrap{grid-template-columns:380px 1fr;align-items:start;}
+}
+
+.card{
+  background:var(--card);
+  border:1.5px solid var(--ink);
+  border-radius:4px;
+  box-shadow:4px 4px 0 rgba(28,31,26,0.08);
+}
+.card-head{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:14px 18px;
+  border-bottom:1.5px solid var(--rule);
+}
+.card-num{
+  font-family:var(--mono);
+  font-size:11px;
+  width:22px;height:22px;
+  border-radius:50%;
+  border:1.5px solid var(--ink);
+  display:flex;align-items:center;justify-content:center;
+  flex:none;
+}
+.card-title{
+  font-family:var(--serif);
+  font-size:16px;
+  font-weight:600;
+}
+.card-body{padding:18px;}
+.card + .card{margin-top:20px;}
+
+/* ===== Sidebar / setup column ===== */
+.field{margin-bottom:16px;}
+.field:last-child{margin-bottom:0;}
+.field label{
+  display:block;
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:0.04em;
+  color:var(--ink-soft);
+  margin-bottom:6px;
+  text-transform:uppercase;
+}
+.field input[type=text],
+.field input[type=password],
+.field input[type=url]{
+  width:100%;
+  font-family:var(--sans);
+  font-size:14px;
+  padding:10px 11px;
+  border:1.5px solid var(--rule);
+  border-radius:3px;
+  background:#fff;
+  color:var(--ink);
+}
+.field input:focus{
+  outline:none;
+  border-color:var(--bubble);
+  box-shadow:0 0 0 3px rgba(47,93,79,0.12);
+}
+.field .hint{
+  font-size:12px;
+  color:var(--ink-soft);
+  margin-top:6px;
+  line-height:1.5;
+}
+.field .hint a{color:var(--accent);}
+
+.btn{
+  font-family:var(--sans);
+  font-weight:600;
+  font-size:14px;
+  padding:11px 18px;
+  border-radius:3px;
+  border:1.5px solid var(--ink);
+  background:var(--ink);
+  color:var(--paper);
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  transition:transform .08s ease;
+}
+.btn:hover{transform:translateY(-1px);}
+.btn:active{transform:translateY(0);}
+.btn:disabled{opacity:0.45;cursor:not-allowed;transform:none;}
+.btn-ghost{
+  background:transparent;
+  color:var(--ink);
+}
+.btn-accent{
+  background:var(--accent);
+  border-color:var(--accent);
+  color:#fff;
+}
+.btn-block{width:100%;justify-content:center;}
+.btn-sm{padding:7px 12px;font-size:12.5px;}
+
+.divider{
+  border:none;
+  border-top:1px dashed var(--rule);
+  margin:18px 0;
+}
+
+.toggle-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:8px 0;
+  font-size:13px;
+}
+
+/* ===== Upload zone ===== */
+.dropzone{
+  border:2px dashed var(--rule);
+  border-radius:6px;
+  padding:34px 20px;
+  text-align:center;
+  background:repeating-linear-gradient(45deg, rgba(28,31,26,0.015) 0 10px, transparent 10px 20px);
+  cursor:pointer;
+  transition:border-color .15s ease, background .15s ease;
+}
+.dropzone.drag{
+  border-color:var(--bubble);
+  background:rgba(47,93,79,0.06);
+}
+.dropzone-icon{
+  width:38px;height:38px;
+  margin:0 auto 12px;
+  border:1.5px solid var(--ink);
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+}
+.dropzone-title{font-family:var(--serif);font-size:16px;font-weight:600;margin-bottom:4px;}
+.dropzone-sub{font-size:12.5px;color:var(--ink-soft);font-family:var(--mono);}
+
+.file-chip-list{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:14px;
+}
+.file-chip{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  background:#fff;
+  border:1.5px solid var(--rule);
+  border-radius:20px;
+  padding:5px 6px 5px 12px;
+  font-size:12.5px;
+  font-family:var(--mono);
+}
+.file-chip button{
+  background:none;border:none;cursor:pointer;
+  width:18px;height:18px;border-radius:50%;
+  color:var(--ink-soft);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;line-height:1;
+}
+.file-chip button:hover{background:var(--warn-bg);color:var(--warn);}
+
+/* ===== Queue / processing list ===== */
+.queue-item{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:10px 0;
+  border-bottom:1px solid var(--rule);
+  font-size:13px;
+}
+.queue-item:last-child{border-bottom:none;}
+.queue-thumb{
+  width:34px;height:34px;
+  border:1.5px solid var(--ink);
+  border-radius:3px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);
+  font-size:10px;
+  flex:none;
+  background:#fff;
+}
+.queue-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.queue-state{
+  font-family:var(--mono);
+  font-size:11px;
+  padding:3px 9px;
+  border-radius:12px;
+  flex:none;
+}
+.queue-progress{
+  width:70px;
+  height:5px;
+  background:var(--rule);
+  border-radius:3px;
+  overflow:hidden;
+  flex:none;
+}
+.queue-progress-fill{
+  height:100%;
+  background:var(--bubble);
+  width:0%;
+  transition:width .2s ease;
+}
+.qs-wait{background:#efece2;color:var(--ink-soft);}
+.qs-run{background:#fff3df;color:#8a5a17;}
+.qs-ok{background:var(--correct-bg);color:var(--correct);}
+.qs-err{background:var(--warn-bg);color:var(--warn);}
+
+/* ===== Results table (answer-sheet style) ===== */
+.results-toolbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-bottom:14px;
+}
+.results-count{
+  font-family:var(--mono);
+  font-size:12px;
+  color:var(--ink-soft);
+}
+.table-scroll{
+  overflow-x:auto;
+  border:1.5px solid var(--ink);
+  border-radius:4px;
+}
+table.results{
+  width:100%;
+  border-collapse:collapse;
+  font-size:13px;
+  background:#fff;
+  min-width:880px;
+}
+table.results thead th{
+  font-family:var(--mono);
+  font-size:10.5px;
+  letter-spacing:0.04em;
+  text-transform:uppercase;
+  text-align:left;
+  padding:10px 12px;
+  background:var(--ink);
+  color:var(--paper);
+  position:sticky;
+  top:0;
+}
+table.results tbody td{
+  padding:9px 12px;
+  border-bottom:1px solid var(--rule);
+  vertical-align:top;
+}
+table.results tbody tr:nth-child(even){background:#faf8f2;}
+table.results td.q-text{
+  max-width:340px;
+  white-space:pre-wrap;
+}
+table.results td[contenteditable=true]:focus{
+  outline:2px solid var(--bubble);
+  outline-offset:-2px;
+  background:#fff;
+}
+td.code-cell{font-family:var(--mono);font-weight:600;white-space:nowrap;}
+td.stt-cell{font-family:var(--mono);text-align:center;width:36px;}
+
+.bubble{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:22px;height:22px;
+  border-radius:50%;
+  border:1.5px solid var(--ink);
+  font-family:var(--mono);
+  font-size:11px;
+  font-weight:700;
+  cursor:pointer;
+  margin-right:4px;
+  background:#fff;
+  flex:none;
+}
+.bubble.filled{
+  background:var(--bubble-fill);
+  border-color:var(--bubble-fill);
+  color:#fff;
+}
+.answer-cell{display:flex;gap:0;align-items:center;}
+.row-del{
+  background:none;border:none;cursor:pointer;
+  color:var(--ink-soft);
+  width:24px;height:24px;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:3px;
+}
+.row-del:hover{color:var(--warn);background:var(--warn-bg);}
+
+.empty-state{
+  padding:40px 20px;
+  text-align:center;
+  color:var(--ink-soft);
+}
+.empty-state .stamp{
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:0.08em;
+  border:1.5px dashed var(--rule);
+  border-radius:4px;
+  display:inline-block;
+  padding:10px 18px;
+  margin-bottom:12px;
+  transform:rotate(-1.5deg);
+}
+
+/* ===== Log / message banner ===== */
+.banner{
+  font-size:13px;
+  padding:11px 14px;
+  border-radius:4px;
+  border:1.5px solid var(--rule);
+  margin-bottom:14px;
+  display:flex;
+  gap:10px;
+  align-items:flex-start;
+  line-height:1.5;
+}
+.banner.error{border-color:var(--warn);background:var(--warn-bg);color:var(--warn);}
+.banner.success{border-color:var(--correct);background:var(--correct-bg);color:var(--correct);}
+.banner.info{border-color:var(--rule);background:#fff;color:var(--ink-soft);}
+
+.section-label{
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--ink-soft);
+  margin:0 0 10px;
+}
+
+.spin{
+  width:13px;height:13px;
+  border:2px solid rgba(0,0,0,0.15);
+  border-top-color:currentColor;
+  border-radius:50%;
+  animation:spin 0.7s linear infinite;
+  display:inline-block;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+footer{
+  max-width:1180px;
+  margin:0 auto;
+  padding:0 24px 50px;
+  font-family:var(--mono);
+  font-size:11.5px;
+  color:var(--ink-soft);
+  line-height:1.7;
+}
+
+/* checkbox custom */
+.switch{
+  position:relative;width:36px;height:20px;flex:none;
+}
+.switch input{opacity:0;width:0;height:0;}
+.switch .track{
+  position:absolute;inset:0;background:var(--rule);border-radius:20px;
+  transition:background .15s ease;cursor:pointer;
+}
+.switch .track:before{
+  content:'';position:absolute;width:14px;height:14px;left:3px;top:3px;
+  background:#fff;border-radius:50%;transition:transform .15s ease;
+  box-shadow:0 1px 2px rgba(0,0,0,0.3);
+}
+.switch input:checked + .track{background:var(--bubble);}
+.switch input:checked + .track:before{transform:translateX(16px);}
+
+.kv{display:flex;justify-content:space-between;font-size:12.5px;padding:4px 0;color:var(--ink-soft);}
+.kv b{color:var(--ink);font-weight:600;}
+
+a.linklike{color:var(--accent);text-decoration:underline;cursor:pointer;}
 </style>
 </head>
 <body>
 
-<header>
-  <h1>📋 Thu thập & chuẩn hóa dữ liệu đề thi</h1>
-  <p>Nhập từ ảnh / chụp trực tiếp / link / file (PDF, Word, Excel...) → chuẩn hóa thành bảng → đẩy lên Google Sheets</p>
-</header>
-
-<div id="fileProtocolWarning" class="config-box" style="display:none;background:#fde8e8;border-color:#e8b8b8">
-  ⚠️ <b>Bạn đang mở file này trực tiếp (file://...)</b> — một số trình duyệt (đặc biệt Chrome) sẽ
-  chặn việc đọc file/ảnh hoặc tải thư viện ngoài khi chạy theo cách này, khiến nút tải ảnh/file
-  không hoạt động hoặc AI không phân tích được.<br>
-  <b>Cách khắc phục:</b> chạy trang qua một server cục bộ thay vì double-click mở file, ví dụ:
-  <ul style="margin:6px 0 0 18px;padding:0">
-    <li>Mở Terminal/CMD tại thư mục chứa file, gõ: <code>python -m http.server 8000</code> rồi mở
-      <code>http://localhost:8000/index.html</code></li>
-    <li>Hoặc dùng tiện ích "Live Server" trong VS Code</li>
-    <li>Hoặc upload file lên một dịch vụ hosting tĩnh (Netlify, GitHub Pages...)</li>
-  </ul>
-</div>
-
-<div class="config-box">
-  ⚙️ <b>Bước 1 – kết nối Google Sheets:</b> dán URL Web App (Apps Script) bạn đã deploy vào ô bên dưới.
-  Xem hướng dẫn lấy URL này trong file <code>apps-script.gs</code> đi kèm.
-  <div class="row" style="margin-top:8px">
-    <div style="flex:1;min-width:260px">
-      <label>Apps Script Web App URL</label>
-      <input type="url" id="scriptUrl" placeholder="https://script.google.com/macros/s/XXXX/exec">
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <span class="brand-mark">ĐT</span>
+      <div>
+        <div class="brand-name">Quét Đề Thi</div>
+        <div class="brand-sub">ảnh / PDF → văn bản → Google Sheets</div>
+      </div>
     </div>
-    <button class="ghost" onclick="saveUrl()">Lưu</button>
-  </div>
-</div>
-
-<div class="config-box">
-  🤖 <b>Bước 2 – kết nối AI miễn phí (Google Gemini):</b>
-  Lấy API key free tại <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a> (đăng nhập Google, bấm "Create API key").
-  Key chỉ lưu trong trình duyệt của bạn, không gửi đi đâu khác ngoài Google.
-  <div class="row" style="margin-top:8px">
-    <div style="flex:1;min-width:260px">
-      <label>Gemini API Key</label>
-      <input type="text" id="apiKey" placeholder="AIza...">
-    </div>
-    <button class="ghost" onclick="saveApiKey()">Lưu Key</button>
-  </div>
-  <p class="hint">AI sẽ: đọc nội dung ảnh/văn bản thô → tách đúng câu hỏi, 4 đáp án, đáp án đúng → nhận diện <b>Mã đề thi</b> của từng câu →
-  gộp các câu cùng mã đề lại với nhau và đánh số STT tăng dần trong mỗi mã đề. Gemini có hạn mức miễn phí hàng ngày, dùng vừa đủ để tránh bị chặn tạm thời.
-  <br><b>Lưu ý:</b> bạn cần tự nhập API key của riêng mình (mỗi người dùng key riêng để không bị chia sẻ hạn mức free với người khác).</p>
-</div>
-
-<div class="tabs">
-  <button class="tab-btn active" data-tab="image">📷 Ảnh / Chụp trực tiếp</button>
-  <button class="tab-btn" data-tab="link">🔗 Đường link</button>
-  <button class="tab-btn" data-tab="file">📄 File (PDF/Word/Excel...)</button>
-  <button class="tab-btn" data-tab="manual">✏️ Nhập tay nhanh</button>
-</div>
-
-<!-- TAB 1: IMAGE -->
-<div class="panel active" id="panel-image">
-  <div class="row">
-    <div>
-      <label>Tải ảnh từ máy</label>
-      <input type="file" id="imgUpload" accept="image/*" multiple>
-    </div>
-    <div>
-      <label>Chụp ảnh trực tiếp (camera)</label>
-      <input type="file" id="imgCamera" accept="image/*" capture="environment">
+    <div class="status-pill" id="gStatusPill">
+      <span class="dot" id="gDot"></span>
+      <span id="gStatusText">Chưa đăng nhập Google</span>
     </div>
   </div>
-  <p class="hint">Ảnh sẽ được lưu kèm dòng dữ liệu. Bạn cần tự đọc và gõ nội dung câu hỏi/đáp án vào bảng bên dưới
-  (trình duyệt không tự OCR được tiếng Việt chính xác). Mỗi ảnh tạo 1 dòng mới để bạn điền nội dung.</p>
-  <div class="preview-grid" id="imgPreview"></div>
 </div>
 
-<!-- TAB 2: LINK -->
-<div class="panel" id="panel-link">
-  <div class="row">
-    <div style="flex:1">
-      <label>Dán đường link đề thi (mỗi dòng 1 link)</label>
-      <textarea id="linkInput" placeholder="https://...&#10;https://..."></textarea>
-    </div>
-  </div>
-  <button onclick="addLinks()">+ Thêm vào bảng</button>
-  <p class="hint">Link được thêm làm ghi chú nguồn; nội dung câu hỏi vẫn cần điền tay vào bảng.</p>
-</div>
+<div class="wrap">
 
-<!-- TAB 3: FILE -->
-<div class="panel" id="panel-file">
-  <div class="row">
-    <div>
-      <label>Chọn file (.pdf, .docx, .xlsx, .csv, .txt)</label>
-      <input type="file" id="fileUpload" accept=".pdf,.docx,.xlsx,.xls,.csv,.txt" multiple>
-    </div>
-  </div>
-  <p class="hint">
-    - PDF/Word/TXT: nội dung văn bản sẽ được trích xuất thô vào 1 ô để bạn tách câu hỏi thủ công.<br>
-    - Excel/CSV: nếu đã có cột giống mẫu (Mã đề, STT, Nội dung câu hỏi, Đáp án A-D, Đáp án đúng) sẽ tự map vào bảng.
-  </p>
-  <div id="fileLog" class="hint"></div>
-</div>
-
-<!-- TAB 4: MANUAL -->
-<div class="panel" id="panel-manual">
-  <p class="hint">Thêm nhanh 1 dòng trống để gõ tay:</p>
-  <button onclick="addEmptyRow()">+ Thêm dòng trống</button>
-</div>
-
-<div class="toolbar">
-  <small id="rowCount">0 dòng dữ liệu</small>
+  <!-- LEFT COLUMN: setup -->
   <div>
-    <button class="secondary" onclick="analyzeWithAI()">🤖 Phân tích bằng AI</button>
-    <button class="ghost" onclick="sortRows()">↕ Sắp xếp theo Mã đề</button>
-    <button class="secondary" onclick="exportCSV()">⬇ Xuất CSV</button>
-    <button onclick="syncToSheet()">☁ Đồng bộ lên Google Sheets</button>
+    <div class="card">
+      <div class="card-head">
+        <span class="card-num">1</span>
+        <span class="card-title">Công cụ đọc chữ (OCR)</span>
+      </div>
+      <div class="card-body">
+        <div class="kv"><span>Công nghệ</span><b>Tesseract.js — miễn phí, chạy ngay trên máy bạn</b></div>
+        <div class="kv"><span>Ngôn ngữ</span><b>Tiếng Việt + Tiếng Anh</b></div>
+        <div class="kv"><span>Cần API key?</span><b>Không</b></div>
+        <div class="hint" style="margin-top:10px;">Lưu ý: OCR miễn phí đọc chữ Việt có dấu không hoàn hảo 100%, đặc biệt với ảnh mờ/nghiêng hoặc chữ nhỏ. Bảng kết quả bên dưới cho phép sửa trực tiếp — nên rà lại trước khi ghi vào Sheets. Ảnh càng rõ, càng thẳng, càng sáng thì kết quả càng tốt.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <span class="card-num">2</span>
+        <span class="card-title">Kết nối Google Sheets</span>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <label for="oauthClientId">Google OAuth Client ID</label>
+          <input type="text" id="oauthClientId" placeholder="xxxxxxxx.apps.googleusercontent.com">
+          <div class="hint">Chưa có Client ID? <span class="linklike" id="openGuideBtn">Xem hướng dẫn tạo (5 phút)</span></div>
+        </div>
+        <div class="field">
+          <label for="sheetId">ID Google Sheet đích</label>
+          <input type="text" id="sheetId" placeholder="Dán ID hoặc link Google Sheet">
+          <div class="hint">Lấy từ URL: docs.google.com/spreadsheets/d/<b>ID-Ở-ĐÂY</b>/edit</div>
+        </div>
+        <div class="field">
+          <label for="sheetTabName">Tên trang tính (tab)</label>
+          <input type="text" id="sheetTabName" value="Trang tính1">
+        </div>
+        <button class="btn btn-block" id="googleConnectBtn">Đăng nhập Google</button>
+      </div>
+    </div>
+
+    <div class="card" id="guideCard" style="display:none;">
+      <div class="card-head">
+        <span class="card-num">?</span>
+        <span class="card-title">Tạo OAuth Client ID — từng bước</span>
+      </div>
+      <div class="card-body" style="font-size:13px;line-height:1.7;">
+        <ol style="padding-left:18px;margin:0;">
+          <li>Vào <a class="linklike" href="https://console.cloud.google.com/projectcreate" target="_blank">console.cloud.google.com</a> → tạo <b>Project mới</b> (đặt tên gì cũng được).</li>
+          <li>Vào menu <b>APIs & Services → Library</b>, tìm <b>Google Sheets API</b> → bấm <b>Enable</b>.</li>
+          <li>Vào <b>APIs & Services → OAuth consent screen</b> → chọn <b>External</b> → điền tên ứng dụng + email → Save.</li>
+          <li>Ở mục <b>Test users</b>, thêm chính email Gmail bạn sẽ dùng để đăng nhập.</li>
+          <li>Vào <b>APIs & Services → Credentials</b> → <b>Create Credentials → OAuth client ID</b>.</li>
+          <li>Chọn loại <b>Web application</b>.</li>
+          <li>Ở mục <b>Authorized JavaScript origins</b>, thêm đúng địa chỉ trang web bạn đang mở (xem ở thanh địa chỉ trình duyệt, ví dụ <code>https://claude.site</code> hoặc <code>http://localhost:xxxx</code>).</li>
+          <li>Bấm <b>Create</b> → copy chuỗi <b>Client ID</b> (dạng ...apps.googleusercontent.com) → dán vào ô bên trên.</li>
+        </ol>
+        <div class="hint" style="margin-top:10px;">Lưu ý: vì app ở chế độ Test, chỉ những email bạn thêm ở bước 4 mới đăng nhập được. Muốn cho người khác dùng, thêm email họ vào Test users tương tự.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <span class="card-num">3</span>
+        <span class="card-title">Mã đề thi</span>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <label for="examCode">Mã đề (áp dụng cho lượt quét này)</label>
+          <input type="text" id="examCode" placeholder="VD: 1001">
+          <div class="hint">Nếu ảnh/PDF có in sẵn mã đề, hệ thống sẽ ưu tiên dùng mã đọc được; ô này dùng khi ảnh không có mã đề rõ ràng.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT COLUMN: upload + results -->
+  <div>
+    <div class="card">
+      <div class="card-head">
+        <span class="card-num">4</span>
+        <span class="card-title">Tải ảnh hoặc PDF đề thi</span>
+      </div>
+      <div class="card-body">
+        <div class="dropzone" id="dropzone">
+          <div class="dropzone-icon">↑</div>
+          <div class="dropzone-title">Kéo thả file vào đây</div>
+          <div class="dropzone-sub">hoặc bấm để chọn — JPG, PNG, PDF</div>
+          <input type="file" id="fileInput" accept="image/*,application/pdf" multiple style="display:none;">
+        </div>
+        <div class="file-chip-list" id="fileChipList"></div>
+
+        <div id="queueWrap" style="display:none;">
+          <hr class="divider">
+          <p class="section-label">Hàng đợi xử lý</p>
+          <div id="queueList"></div>
+        </div>
+
+        <hr class="divider">
+        <button class="btn btn-accent btn-block" id="scanBtn" disabled>Quét và trích xuất câu hỏi</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head" style="justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="card-num">5</span>
+          <span class="card-title">Bảng dữ liệu trích xuất</span>
+        </div>
+        <button class="btn btn-ghost btn-sm" id="addRowBtn">+ Thêm dòng</button>
+      </div>
+      <div class="card-body">
+        <div id="bannerArea"></div>
+
+        <div class="results-toolbar">
+          <span class="results-count" id="resultsCount">0 câu hỏi</span>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-ghost btn-sm" id="exportCsvBtn">Tải CSV</button>
+            <button class="btn btn-accent btn-sm" id="pushSheetBtn">Ghi vào Google Sheets</button>
+          </div>
+        </div>
+
+        <div class="table-scroll">
+          <table class="results" id="resultsTable">
+            <thead>
+              <tr>
+                <th style="width:34px;"></th>
+                <th>Mã đề thi</th>
+                <th style="width:36px;">STT</th>
+                <th>Nội dung câu hỏi</th>
+                <th>Đáp án A</th>
+                <th>Đáp án B</th>
+                <th>Đáp án C</th>
+                <th>Đáp án D</th>
+                <th>Đáp án đúng</th>
+              </tr>
+            </thead>
+            <tbody id="resultsBody"></tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="emptyState">
+          <div class="stamp">CHƯA CÓ DỮ LIỆU</div>
+          <div>Tải ảnh hoặc PDF đề thi ở trên rồi bấm "Quét và trích xuất câu hỏi".</div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
-<div class="status" id="statusMsg"></div>
 
-<div style="margin:0 32px 40px;overflow-x:auto">
-<table id="dataTable">
-  <thead>
-    <tr>
-      <th>Mã đề thi</th><th>STT</th><th>Nội dung câu hỏi</th>
-      <th>Đáp án A</th><th>Đáp án B</th><th>Đáp án C</th><th>Đáp án D</th>
-      <th>Đáp án đúng</th><th>Nguồn / Ảnh</th><th></th>
-    </tr>
-  </thead>
-  <tbody id="tableBody"></tbody>
-</table>
-</div>
+<footer>
+  Dữ liệu xử lý hoàn toàn trong trình duyệt của bạn. Khoá API và phiên đăng nhập Google không được gửi tới máy chủ nào khác ngoài Anthropic và Google.
+</footer>
 
-<footer>Dữ liệu lưu tạm trong trình duyệt cho tới khi bạn đồng bộ lên Google Sheets.</footer>
-
-<script>
-let rows = [];
-let rowId = 0;
-
-// ---- TAB SWITCH ----
-document.querySelectorAll('.tab-btn').forEach(btn=>{
-  btn.onclick = ()=>{
-    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
-  };
-});
-
-function saveUrl(){
-  const url = document.getElementById('scriptUrl').value.trim();
-  localStorage.setItem('examScriptUrl', url);
-  setStatus('Đã lưu URL Apps Script.');
-}
-function saveApiKey(){
-  const key = document.getElementById('apiKey').value.trim();
-  localStorage.setItem('examApiKey', key);
-  setStatus('Đã lưu API Key (chỉ lưu trong trình duyệt này).');
-}
-window.onload = ()=>{
-  if(window.location.protocol === 'file:'){
-    document.getElementById('fileProtocolWarning').style.display = 'block';
-  }
-  const saved = localStorage.getItem('examScriptUrl');
-  if(saved) document.getElementById('scriptUrl').value = saved;
-  const savedKey = localStorage.getItem('examApiKey');
-  if(savedKey) document.getElementById('apiKey').value = savedKey;
-  render();
-};
-
-function setStatus(msg){
-  document.getElementById('statusMsg').textContent = msg;
-}
-
-function newRow(data={}){
-  rowId++;
-  return Object.assign({
-    id: rowId, maDe:'', stt: rows.length+1, noiDung:'', a:'', b:'', c:'', d:'', dapAnDung:'', nguon:'', imgData:null
-  }, data);
-}
-
-function addEmptyRow(){
-  rows.push(newRow());
-  render();
-}
-
-// ---- IMAGE TAB ----
-function handleImageFiles(fileList){
-  Array.from(fileList).forEach(file=>{
-    const reader = new FileReader();
-    reader.onload = e=>{
-      rows.push(newRow({nguon: file.name, imgData: e.target.result}));
-      render();
-      const img = document.createElement('img');
-      img.src = e.target.result;
-      document.getElementById('imgPreview').appendChild(img);
-    };
-    reader.onerror = ()=>{
-      setStatus('❌ Không đọc được file ảnh "' + file.name + '". Nếu bạn đang mở file bằng cách double-click (file://), hãy thử chạy qua localhost (xem cảnh báo phía trên) hoặc dùng trình duyệt khác.');
-    };
-    reader.readAsDataURL(file);
-  });
-}
-document.getElementById('imgUpload').onchange = e=>handleImageFiles(e.target.files);
-document.getElementById('imgCamera').onchange = e=>handleImageFiles(e.target.files);
-
-// ---- LINK TAB ----
-function addLinks(){
-  const lines = document.getElementById('linkInput').value.split('\n').map(s=>s.trim()).filter(Boolean);
-  lines.forEach(link=>{
-    rows.push(newRow({nguon: link}));
-  });
-  document.getElementById('linkInput').value='';
-  render();
-}
-
-// ---- FILE TAB ----
-document.getElementById('fileUpload').onchange = async e=>{
-  const log = document.getElementById('fileLog');
-  for(const file of e.target.files){
-    const ext = file.name.split('.').pop().toLowerCase();
-    try{
-      if(ext==='xlsx' || ext==='xls' || ext==='csv'){
-        await handleExcel(file);
-        log.innerHTML += `<div>✅ ${file.name}: đã thử map vào bảng.</div>`;
-      } else if(ext==='docx'){
-        await handleDocx(file);
-        log.innerHTML += `<div>✅ ${file.name}: đã trích văn bản (1 dòng).</div>`;
-      } else if(ext==='pdf'){
-        await handlePdf(file);
-        log.innerHTML += `<div>✅ ${file.name}: đã trích văn bản (1 dòng).</div>`;
-      } else if(ext==='txt'){
-        const text = await file.text();
-        rows.push(newRow({noiDung:text.slice(0,4000), nguon:file.name}));
-        log.innerHTML += `<div>✅ ${file.name}: đã thêm.</div>`;
-      } else {
-        log.innerHTML += `<div>⚠️ ${file.name}: định dạng chưa hỗ trợ.</div>`;
-      }
-    }catch(err){
-      log.innerHTML += `<div>❌ Lỗi đọc ${file.name}: ${err.message}</div>`;
-    }
-  }
-  render();
-};
-
-function handleExcel(file){
-  return new Promise((resolve,reject)=>{
-    const reader = new FileReader();
-    reader.onload = e=>{
-      try{
-        const wb = XLSX.read(e.target.result, {type:'array'});
-        const sheet = wb.Sheets[wb.SheetNames[0]];
-        const json = XLSX.utils.sheet_to_json(sheet, {defval:''});
-        json.forEach(r=>{
-          rows.push(newRow({
-            maDe: r['Mã đề thi']||r['Ma de thi']||'',
-            stt: r['STT']|| (rows.length+1),
-            noiDung: r['Nội dung câu hỏi']||r['Noi dung cau hoi']||'',
-            a: r['Đáp án A']||r['Dap an A']||'',
-            b: r['Đáp án B']||r['Dap an B']||'',
-            c: r['Đáp án C']||r['Dap an C']||'',
-            d: r['Đáp án D']||r['Dap an D']||'',
-            dapAnDung: r['Đáp án đúng']||r['Dap an dung']||'',
-            nguon: file.name
-          }));
-        });
-        resolve();
-      }catch(err){reject(err);}
-    };
-    reader.onerror = reject;
-    reader.readAsArrayBuffer(file);
-  });
-}
-
-function handleDocx(file){
-  return new Promise((resolve,reject)=>{
-    const reader = new FileReader();
-    reader.onload = e=>{
-      mammoth.extractRawText({arrayBuffer:e.target.result})
-        .then(result=>{
-          rows.push(newRow({noiDung: result.value.slice(0,4000), nguon:file.name}));
-          resolve();
-        }).catch(reject);
-    };
-    reader.onerror = reject;
-    reader.readAsArrayBuffer(file);
-  });
-}
-
-function handlePdf(file){
-  return new Promise((resolve,reject)=>{
-    if(window['pdfjsLib']){
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    }
-    const reader = new FileReader();
-    reader.onload = async e=>{
-      try{
-        const pdf = await pdfjsLib.getDocument({data:e.target.result}).promise;
-        let text = '';
-        for(let i=1;i<=Math.min(pdf.numPages,15);i++){
-          const page = await pdf.getPage(i);
-          const content = await page.getTextContent();
-          text += content.items.map(it=>it.str).join(' ') + '\n';
-        }
-        rows.push(newRow({noiDung: text.slice(0,4000), nguon:file.name}));
-        resolve();
-      }catch(err){reject(err);}
-    };
-    reader.onerror = reject;
-    reader.readAsArrayBuffer(file);
-  });
-}
-
-// ---- TABLE RENDER ----
-function render(){
-  const body = document.getElementById('tableBody');
-  body.innerHTML = '';
-  rows.forEach((r,idx)=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td contenteditable="true" data-f="maDe">${r.maDe}</td>
-      <td contenteditable="true" data-f="stt">${r.stt}</td>
-      <td contenteditable="true" data-f="noiDung">${escapeHtml(r.noiDung)}</td>
-      <td contenteditable="true" data-f="a">${escapeHtml(r.a)}</td>
-      <td contenteditable="true" data-f="b">${escapeHtml(r.b)}</td>
-      <td contenteditable="true" data-f="c">${escapeHtml(r.c)}</td>
-      <td contenteditable="true" data-f="d">${escapeHtml(r.d)}</td>
-      <td contenteditable="true" data-f="dapAnDung">${escapeHtml(r.dapAnDung)}</td>
-      <td>${r.imgData?'<img src="'+r.imgData+'" style="width:60px;border-radius:4px">':escapeHtml(r.nguon)}</td>
-      <td><button class="ghost" onclick="removeRow(${r.id})">Xóa</button></td>
-    `;
-    tr.querySelectorAll('[contenteditable]').forEach(td=>{
-      td.oninput = ()=>{ r[td.dataset.f] = td.textContent; };
-    });
-    body.appendChild(tr);
-  });
-  document.getElementById('rowCount').textContent = rows.length + ' dòng dữ liệu';
-}
-function escapeHtml(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function removeRow(id){ rows = rows.filter(r=>r.id!==id); render(); }
-
-// ---- AI ANALYSIS (Gemini API) ----
-const AI_SYSTEM_PROMPT = `Bạn là trợ lý chuẩn hóa đề thi. Nhiệm vụ: đọc nội dung được cung cấp (có thể là ảnh chụp đề thi, hoặc văn bản thô trích từ PDF/Word) và trích xuất TẤT CẢ câu hỏi trắc nghiệm tìm thấy.
-Với mỗi câu hỏi, xác định:
-- maDe: Mã đề thi (nếu có ghi rõ trong tài liệu như "Mã đề: 101", "Mã đề thi 203"... nếu KHÔNG thấy thì để rỗng "")
-- stt: số thứ tự câu hỏi như trong tài liệu gốc (số nguyên)
-- noiDung: nội dung câu hỏi đầy đủ, đúng chính tả tiếng Việt
-- a, b, c, d: nội dung 4 đáp án (không kèm chữ A. B. C. D. ở đầu)
-- dapAnDung: chỉ ghi 1 ký tự A, B, C hoặc D nếu xác định được đáp án đúng từ tài liệu (in đậm, khoanh tròn, ký hiệu *, ghi chú đáp án...). Nếu không xác định được, để rỗng "".
-
-CHỈ trả về JSON thuần túy, là một mảng (array), không kèm giải thích, không markdown code fence. Định dạng:
-[{"maDe":"101","stt":1,"noiDung":"...","a":"...","b":"...","c":"...","d":"...","dapAnDung":"A"}, ...]
-Nếu không tìm thấy câu hỏi nào hợp lệ, trả về mảng rỗng [].`;
-
-const GEMINI_MODEL = 'gemini-flash-latest'; // model GA ổn định, có hạn mức free trên AI Studio
-
-async function callGeminiAPI(parts, apiKey){
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
-  const body = {
-    system_instruction: { parts: [{ text: AI_SYSTEM_PROMPT }] },
-    contents: [
-      { role: 'user', parts: parts }
-    ],
-    generationConfig: {
-      temperature: 0.2,
-      maxOutputTokens: 8192,
-      topP: 0.95,
-      candidateCount: 1,
-      response_mime_type: 'application/json'
-    }
-  };
-  const res = await fetch(url, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify(body)
-  });
-  if(!res.ok){
-    let errText = await res.text();
-    try{
-      const errJson = JSON.parse(errText);
-      errText = (errJson.error && errJson.error.message) ? errJson.error.message : errText;
-    }catch(_){}
-    if(res.status === 400 && /API key/i.test(errText)){
-      throw new Error('API key không hợp lệ. Kiểm tra lại key ở Bước 2.');
-    }
-    if(res.status === 429){
-      throw new Error('Đã hết hạn mức miễn phí tạm thời (429), hãy đợi một lát rồi thử lại.');
-    }
-    throw new Error('API lỗi (' + res.status + '): ' + errText.slice(0,300));
-  }
-  const data = await res.json();
-
-  // Trường hợp bị chặn vì lý do an toàn / hết token
-  if(!data.candidates || data.candidates.length===0){
-    const blockReason = data.promptFeedback && data.promptFeedback.blockReason;
-    throw new Error('AI không trả về kết quả' + (blockReason ? ' (lý do: ' + blockReason + ')' : ' (có thể hết hạn mức free, thử lại sau).'));
-  }
-  const cand = data.candidates[0];
-  if(cand.finishReason === 'MAX_TOKENS'){
-    throw new Error('Phản hồi AI bị cắt vì quá dài (MAX_TOKENS). Thử chia nhỏ ảnh/văn bản nguồn.');
-  }
-  const textPart = cand.content && cand.content.parts && cand.content.parts.map(p=>p.text||'').join('');
-  if(!textPart){
-    throw new Error('Không có phản hồi văn bản từ AI (có thể bị chặn an toàn hoặc hết hạn mức free).');
-  }
-  let clean = textPart.trim().replace(/^```json/i, '').replace(/^```/, '').replace(/```$/,'').trim();
-  try{
-    const parsed = JSON.parse(clean);
-    return Array.isArray(parsed) ? parsed : (Array.isArray(parsed.questions) ? parsed.questions : []);
-  }catch(e){
-    const match = clean.match(/\[\s*\{[\s\S]*\}\s*\]/);
-    if(match) return JSON.parse(match[0]);
-    throw new Error('Không thể parse JSON từ phản hồi AI. Phản hồi raw: ' + clean.slice(0,800));
-  }
-}
-
-function dataUrlToBase64(dataUrl){
-  const parts = dataUrl.split(',');
-  const mime = parts[0].match(/data:(.*);base64/)[1];
-  return {mime, base64: parts[1]};
-}
-
-async function analyzeWithAI(){
-  const apiKey = (document.getElementById('apiKey').value || localStorage.getItem('examApiKey') || '').trim();
-  if(!apiKey){ setStatus('⚠️ Bạn cần nhập Gemini API Key ở Bước 2 trước.'); return; }
-  const candidates = rows.filter(r => r.imgData || (r.noiDung && r.noiDung.length > 20 && !r.a));
-  if(candidates.length===0){ setStatus('⚠️ Không có ảnh hoặc văn bản thô nào cần phân tích. Hãy tải ảnh/file trước.'); return; }
-
-  setStatus('🤖 AI đang phân tích ' + candidates.length + ' mục, vui lòng đợi...');
-  let newRows = [];
-
-  for(const cand of candidates){
-    try{
-      let parts = [];
-      if(cand.imgData){
-        const {mime, base64} = dataUrlToBase64(cand.imgData);
-        parts.push({ inline_data: { mime_type: mime, data: base64 } });
-        parts.push({ text: 'Đây là ảnh chụp đề thi. Hãy trích xuất câu hỏi theo đúng định dạng JSON đã yêu cầu.' });
-      } else {
-        parts.push({ text: 'Văn bản trích từ tài liệu nguồn "'+ (cand.nguon||'') +'":\n\n' + cand.noiDung });
-      }
-      const extracted = await callGeminiAPI(parts, apiKey);
-      extracted.forEach(q=>{
-        newRows.push(newRow({
-          maDe: q.maDe||'', stt: q.stt||'', noiDung: q.noiDung||'',
-          a:q.a||'', b:q.b||'', c:q.c||'', d:q.d||'', dapAnDung:q.dapAnDung||'',
-          nguon: cand.nguon
-        }));
-      });
-    }catch(err){
-      setStatus('❌ Lỗi phân tích "' + (cand.nguon||'mục') + '": ' + err.message);
-      await new Promise(r=>setTimeout(r,1500));
-    }
-  }
-
-  if(newRows.length>0){
-    // loại bỏ các dòng nguồn thô đã được AI thay thế, giữ lại các dòng khác
-    rows = rows.filter(r => !candidates.includes(r));
-    rows = rows.concat(newRows);
-    sortRows();
-    setStatus('✅ AI đã trích xuất ' + newRows.length + ' câu hỏi, đã gộp theo Mã đề và sắp xếp.');
-  } else {
-    setStatus('⚠️ AI không trích xuất được câu hỏi nào hợp lệ.');
-  }
-}
-
-// ---- SORT BY MÃ ĐỀ + STT ----
-function sortRows(){
-  rows.sort((x,y)=>{
-    const mx = (x.maDe||'').toString();
-    const my = (y.maDe||'').toString();
-    if(mx !== my) return mx.localeCompare(my, 'vi', {numeric:true});
-    return (parseInt(x.stt)||0) - (parseInt(y.stt)||0);
-  });
-  // đánh lại STT tăng dần trong từng mã đề
-  let counters = {};
-  rows.forEach(r=>{
-    const key = r.maDe || '__none__';
-    counters[key] = (counters[key]||0) + 1;
-    r.stt = counters[key];
-  });
-  render();
-}
-
-// ---- EXPORT CSV ----
-function exportCSV(){
-  const header = ['Mã đề thi','STT','Nội dung câu hỏi','Đáp án A','Đáp án B','Đáp án C','Đáp án D','Đáp án đúng'];
-  const lines = [header.join(',')];
-  rows.forEach((r)=>{
-    const vals = [r.maDe,r.stt,r.noiDung,r.a,r.b,r.c,r.d,r.dapAnDung].map(v=>'"'+String(v||'').replace(/"/g,'""')+'"');
-    lines.push(vals.join(','));
-  });
-  const blob = new Blob(["\uFEFF"+lines.join('\n')], {type:'text/csv;charset=utf-8;'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'de_thi.csv';
-  a.click();
-}
-
-// ---- SYNC TO GOOGLE SHEETS ----
-async function syncToSheet(){
-  const url = (document.getElementById('scriptUrl').value || localStorage.getItem('examScriptUrl') || '').trim();
-  if(!url){ setStatus('⚠️ Bạn cần dán URL Apps Script Web App trước.'); return; }
-  if(rows.length===0){ setStatus('⚠️ Chưa có dữ liệu để đồng bộ.'); return; }
-  setStatus('Đang đồng bộ...');
-  const payload = rows.map((r)=>({
-    maDe:r.maDe, stt: r.stt, noiDung:r.noiDung, a:r.a, b:r.b, c:r.c, d:r.d, dapAnDung:r.dapAnDung
-  }));
-  try{
-    const res = await fetch(url, {
-      method:'POST',
-      headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({rows: payload})
-    });
-    const text = await res.text();
-    setStatus('✅ Đã gửi ' + rows.length + ' dòng. Phản hồi: ' + text);
-  }catch(err){
-    setStatus('❌ Lỗi đồng bộ: ' + err.message + ' (kiểm tra lại URL / quyền truy cập deploy Apps Script)');
-  }
-}
-</script>
+<script src="app.js"></script>
 </body>
 </html>
