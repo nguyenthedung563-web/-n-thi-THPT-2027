@@ -3,975 +3,570 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tri Thức — Phòng luyện thi</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title>Thu thập đề thi</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/SheetJS/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <style>
   :root{
-    --ink: #1c2a24;
-    --ink-light: #3d5547;
-    --paper-deep: #f0ede4;
-    --paper-lighter: #fdfbf8;
-    --moss: #3e5f4d;
-    --moss-deep: #2a463b;
-    --moss-light: #5a7867;
-    --gold-soft: #dac880;
-    --rose: #b3473f;
-    --rose-light: #d4615a;
-    --line: rgba(28,42,36,0.12);
-    --line-strong: rgba(28,42,36,0.22);
-    --shadow-sm: 0 2px 8px rgba(28,42,36,0.08);
-    --shadow: 0 8px 24px rgba(28,42,36,0.12);
+    --bg:#f6f4ee; --ink:#1f2421; --paper:#ffffff; --line:#d8d3c4;
+    --accent:#b5562f; --accent2:#2f5d50; --muted:#7a766a;
   }
-  *{box-sizing:border-box;}
-  body{
-    margin:0; padding:0;
-    font-family:'Inter', sans-serif;
-    color:var(--ink);
-    background:var(--paper-deep);
-    min-height:100vh;
-    line-height:1.5;
-    letter-spacing:0.3px;
-  }
-  
-  .topbar{
-    display:flex; align-items:center; justify-content:space-between;
-    padding:18px 32px;
-    background:var(--moss-deep);
-    color:#f3efe4;
-    box-shadow: var(--shadow-sm);
-  }
-  .topbar .brand{
-    font-family:'Lora', serif; font-weight:700; font-style:italic; font-size:20px;
-    display:flex; align-items:center; gap:10px; letter-spacing:0.01em;
-  }
-  .topbar .brand .dot{width:8px;height:8px;border-radius:50%;background:var(--gold-soft);}
-  .back-link{
-    color:#e7e2cf; text-decoration:none; font-size:14px; letter-spacing:0.04em;
-    border:1px solid rgba(243,239,228,0.35); padding:9px 16px; border-radius:8px;
-    transition:all .2s ease;
-    background:rgba(243,239,228,0.05);
-  }
-  .back-link:hover{background:rgba(243,239,228,0.15); border-color:rgba(243,239,228,0.7); transform:translateY(-1px);}
-
-  .layout{
-    display:grid;
-    /* fixed left control panel + flexible right content */
-    grid-template-columns: 320px 1fr;
-    grid-template-rows: auto 1fr; /* row 1: questions, row 2: sheet */
-    gap:20px;
-    padding:20px 24px;
-    align-items:start;
-  }
-
-  /* ---- control panel ---- */
-  .panel{
-    background:#fff;
-    border:1px solid var(--line);
-    border-radius:12px;
-    padding:12px 14px;
-    box-shadow: var(--shadow);
-    /* place control panel in left column spanning both rows */
-    grid-column: 1 / 2;
-    grid-row: 1 / -1;
-    position:relative;
-  }
-  .panel h2{font-family:'Lora', serif; font-size:20px; margin:0 0 6px 0; color:var(--moss-deep); font-weight:700;}
-  .panel .panel-sub{font-size:14px; color:#8b9a91; margin-bottom:10px; line-height:1.3;}
-
-  .timer-display{
-    text-align:center; font-family:'Lora', serif; font-size:56px; font-weight:700; color:var(--moss-deep);
-    background:linear-gradient(135deg, #fdfbf8 0%, #f8f4eb 100%); border:1.5px solid var(--line-strong);
-    border-radius:12px; padding:6px 0; margin-bottom:10px; letter-spacing:0.02em; position:relative;
-  }
-  .timer-display .timer-label{
-    display:block; font-family:'Inter',sans-serif; font-weight:600; font-size:12px;
-    letter-spacing:0.15em; text-transform:uppercase; color:#a8b5b0; margin-bottom:6px;
-  }
-  .timer-display.danger{color:var(--rose-light);}
-
-  .field-group{margin-bottom:22px;}
-  .field-group label{
-    display:block; font-size:13px; font-weight:700; letter-spacing:0.04em;
-    color:#5b6a5f; margin-bottom:9px; text-transform:uppercase;
-  }
-  select, .madekit-input{
-    width:100%; padding:12px 13px; font-size:15px; font-family:'Inter',sans-serif;
-    border:1.5px solid var(--line-strong); border-radius:10px; background:#fff; color:var(--ink);
-    outline:none; transition:all .2s ease;
-  }
-  select:hover, .madekit-input:hover{border-color:var(--line); background:#fdfbf8;}
-  select:focus, .madekit-input:focus{border-color:var(--moss); box-shadow:0 0 0 3.5px rgba(62,95,77,0.1);}
-
-  .btn-row{display:flex; flex-direction:row; gap:8px; margin-top:8px;}
-  .btn{
-    border:none; border-radius:8px; padding:10px 12px; font-size:15px; font-weight:600;
-    cursor:pointer; font-family:'Inter',sans-serif; letter-spacing:0.01em;
-    transition: all .2s ease; display:flex; align-items:center; justify-content:center; gap:8px;
-    box-shadow: var(--shadow-sm);
-  }
-  .btn:hover:not(:disabled){filter:brightness(1.08); transform:translateY(-2px); box-shadow: var(--shadow);}
-  .btn:active:not(:disabled){transform:translateY(0);}
-  .btn:disabled{opacity:0.5; cursor:not-allowed; transform:none; filter:none;}
-  .btn-start{background:linear-gradient(135deg, var(--moss) 0%, var(--moss-light) 100%); color:#fff;}
-  .btn-submit{background:linear-gradient(135deg, var(--rose) 0%, var(--rose-light) 100%); color:#fff;}
-  .btn-reset{background:#fff; color:var(--moss); border:1.5px solid var(--line-strong);}
-
-  .divider{height:1px; background:var(--line); margin:24px 0;}
-
-  .made-result{
-    margin-top:11px; padding:13px 15px; border-radius:10px; background:#eef3ea; border:1px solid #d3e0cc;
-    font-size:14px; color:var(--moss-deep); display:none; line-height:1.5;
-  }
-  .made-result.show{display:block; animation: slideDown .2s ease;}
-  .made-result b{display:block; font-family:'Lora',serif; font-size:15px; margin-bottom:4px; font-weight:600;}
-  @keyframes slideDown{from{opacity:0; transform:translateY(-8px);} to{opacity:1; transform:translateY(0);}}
-
-  .status-pill{
-    display:inline-flex; align-items:center; gap:7px; font-size:12px; font-weight:700;
-    letter-spacing:0.08em; text-transform:uppercase; padding:8px 12px; border-radius:8px;
-    background:#f0ede4; color:#8b9a91; margin-bottom:20px;
-  }
-  .status-pill .dot{width:6px;height:6px;border-radius:50%; background:#a8b5b0;}
-  .status-pill.running{background:#e6f0e2; color:var(--moss);}
-  .status-pill.running .dot{background:var(--moss); animation:pulse 1.4s infinite;}
-  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
-
-  /* ---- answer sheet ---- */
-  .sheet-wrap{
-    background:#fff; border-radius:16px; box-shadow: var(--shadow);
-    padding:36px 40px 44px 40px; border:1px solid var(--line);
-  }
-  .sheet-title{text-align:center; margin-bottom:6px;}
-  .sheet-title h1{
-    font-family:'Lora', serif; font-weight:700; font-size:32px; letter-spacing:0.02em;
-    margin:0 0 8px 0; color:var(--rose); font-style:italic;
-  }
-  .sheet-title .ky-thi{font-size:15px; color:#5a6a5e; font-weight:500;}
-  .sheet-title .ky-thi .fillin{display:inline-block; border-bottom:1.5px dotted #999; min-width:240px; margin:0 6px; position:relative; bottom:-2px;}
-
-  .sheet-row1{display:flex; gap:20px; align-items:flex-start; margin:20px 0 0 0; font-size:15px; line-height:1.6;}
-  .sheet-row1 .baithi{flex:0 0 auto;}
-  .fillin{display:inline-block; border-bottom:1.5px dotted #999; min-width:120px; position:relative; bottom:-1px;}
-
-  .sheet-grid{display:grid; grid-template-columns: 1fr 1.3fr 1.1fr; gap:18px; margin-top:24px;}
-  .info-box{border:1.5px solid var(--rose); border-radius:6px; font-size:13px; overflow:hidden; display:flex; flex-direction:column;}
-  .info-box .info-head{
-    text-align:center; padding:14px 10px; border-bottom:1.5px solid var(--rose); font-weight:700; background:#faf7f0;
-    line-height:1.5; font-size:12px; flex-shrink:0;
-  }
-  .info-box.split > div:first-child{border-bottom:1.5px solid var(--rose);}
-  .info-lines{padding:13px 14px; line-height:2.1; font-size:13px; flex:1;}
-
-  /* scrollable question list + slider */
-  .question-scroll{max-height:360px; overflow:auto; padding-right:8px;}
-  .question-slider{width:100%; margin-top:8px;}
-
-  /* Make question numbers/text slightly larger than the answer bubbles */
-  /* Question text in the question list should be more prominent than the small bubbles */
-  #questionList > div > div:first-child{font-size:16px; line-height:1.4; font-weight:600; color:var(--ink);}
-  #questionList > div > div + div{font-size:14px; color:#3b4340; margin-left:12px;}
-
-  /* questions on top (row 1, right); sheet below (row 2, right) */
-  .questions-column{grid-column:2 / 3; grid-row:1 / 2;}
-  .sheet-wrap{grid-column:2 / 3; grid-row:2 / 3;}
-
-  .sbd-block{display:flex; gap:16px; justify-content:flex-end; align-items:flex-start;}
-  .id-grid{border:1.5px solid var(--rose); border-radius:6px; overflow:hidden; font-size:12px; flex:1; min-width:120px;}
-  .id-grid-head{text-align:center; font-weight:700; padding:8px 0; border-bottom:1.5px solid var(--rose); background:#faf7f0;}
-  .id-grid-boxes{display:flex;}
-  .id-col{display:flex; flex-direction:column; align-items:center; justify-content:center; border-left:1px solid var(--rose);}
-  .id-col:first-child{border-left:none;}
-  .bubble{
-    width:19px; height:19px; border-radius:50%; border:1.4px solid var(--rose);
-    margin:4px 0; cursor:pointer; background:#fff; flex:0 0 auto; transition: all .15s ease;
-    display:flex; align-items:center; justify-content:center;
-  }
-  .bubble:hover{transform:scale(1.15); box-shadow:0 0 0 2px rgba(179, 71, 63, 0.15);}
-  .bubble.filled{background:#000; border-color:#000;} 
-  .bubble.sel-correct{border-color:#228B22 !important; box-shadow:0 6px 12px rgba(34,139,34,0.25);} 
-  .bubble.sel-wrong{border-color:var(--rose) !important; box-shadow:0 6px 12px rgba(179,71,63,0.08);} 
-  .bubble.correct-answer{border-color:#228B22 !important;}
-
-  .section-title{
-    font-family:'Lora', serif; font-weight:700; font-size:17px; margin:36px 0 16px 0; color:var(--moss-deep);
-    text-transform:uppercase; letter-spacing:0.1em;
-  }
-  .note-line{font-style:italic; font-size:14px; text-align:center; color:#7a8a7f; margin:18px 0;}
-
-  .part1-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:14px;}
-  .qblock{border:1.4px solid var(--rose); border-radius:6px; padding:11px 12px 12px 11px; background:#faf7f0;}
-  .qblock .letters{display:flex; font-size:12px; font-weight:800; color:var(--rose); margin-bottom:5px; justify-content:space-around;}
-  .qblock .letters span{flex:1; text-align:center;}
-  .qblock .letters .qnum-space{width:20px; flex:none;}
-  .qrow{display:flex; align-items:center; margin:5px 0;}
-  .qrow .qn{width:28px; font-size:15px; font-weight:700; text-align:center; color:var(--ink-light); flex-shrink:0;}
-  .qrow .opt{flex:1; display:flex; align-items:center; justify-content:center;}
-
-  .part2-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-top:12px;}
-  .p2-pair{border:1.4px solid var(--rose); border-radius:6px; display:flex; overflow:hidden; background:#faf7f0;}
-  .p2-cau{flex:1; padding:10px 10px;}
-  .p2-cau:first-child{border-right:1.4px solid var(--rose);}
-  .p2-cau .cau-label{text-align:center; font-weight:700; font-size:13px; margin-bottom:6px;}
-  .p2-cau .ds-head{display:flex; font-size:11px; color:var(--rose); font-weight:800; justify-content:space-around; margin-bottom:5px;}
-  .p2-line{display:flex; align-items:center; font-size:12px; gap:5px; justify-content:space-between; margin:4px 0;}
-  .p2-line .opts{display:flex; align-items:center; gap:11px;}
-
-  .part3-grid{display:grid; grid-template-columns:repeat(6,1fr); gap:12px; margin-top:12px;}
-  .p3-col{border:1.4px solid var(--rose); border-radius:6px; padding:10px 9px; background:#faf7f0;}
-  .p3-col .cau-label{text-align:center; font-weight:700; font-size:13px; margin-bottom:8px;}
-  .p3-boxes{display:flex; gap:3px; justify-content:center; margin-bottom:8px;}
-  .p3-digit-cell{width:18px; height:21px; border:1px solid var(--rose); border-radius:2px; background:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; color:var(--ink-light);}
-  .p3-digit-cell.has-val{color:#000;}
-  .p3-col.correct .p3-digit-cell{border-color:var(--moss); box-shadow:0 6px 14px rgba(62,95,77,0.06);}
-  .p3-col.wrong .p3-digit-cell{border-color:var(--rose); box-shadow:0 6px 14px rgba(179,71,63,0.06);}
-  .p3-col.correct .p3-rows .bubble.filled{background:var(--moss); border-color:var(--moss);}
-  .p3-col.wrong .p3-rows .bubble.filled{background:var(--rose); border-color:var(--rose);}
-  .bubble.has-val{background:#000;}
-  .qrow.correct{border:1.4px solid var(--moss); border-radius:6px; padding:4px;}
-  .qrow.wrong{border:1.4px solid var(--rose); border-radius:6px; padding:4px;}
-  .p2-line.correct{border:1.2px solid var(--moss); border-radius:6px; padding:6px;}
-  .p2-line.wrong{border:1.2px solid var(--rose); border-radius:6px; padding:6px;}
-  .qrow.wrong .bubble.filled{border-color:var(--rose);} 
-  .p2-line.wrong .bubble.filled{border-color:var(--rose);} 
-  .p3-rows{display:flex; flex-direction:column; align-items:center;}
-  .p3-symrow{display:flex; align-items:center; gap:5px; font-size:12px; height:21px;}
-  .p3-symrow .sym{width:12px; text-align:center; font-weight:800;}
-
-  footer.app-footer{text-align:center; padding:36px 0 56px 0; font-size:12px; color:#a8b5b0; letter-spacing:0.1em; text-transform:uppercase;}
-
-  @media (max-width: 1024px){
-    .layout{grid-template-columns:1fr; grid-template-rows:auto;}
-    .panel{position:static; grid-column: auto;}
-    .part1-grid, .part2-grid{grid-template-columns:repeat(2,1fr);}
-    .part3-grid{grid-template-columns:repeat(3,1fr);}
-    .sheet-grid{grid-template-columns:1fr;}
-    .sbd-block{justify-content:flex-start;}
-  }
-  @media (max-width:640px){
-    .layout{gap:20px; padding:20px;}
-    .panel{padding:24px 20px;}
-    .sheet-wrap{padding:28px 24px;}
-    .part1-grid, .part2-grid{grid-template-columns:1fr;}
-    .part3-grid{grid-template-columns:repeat(2,1fr);}
-    .sheet-title h1{font-size:24px;}
-  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--ink);}
+  header{padding:28px 32px 18px;border-bottom:2px solid var(--ink);}
+  header h1{margin:0 0 4px;font-size:1.6rem;letter-spacing:.5px}
+  header p{margin:0;color:var(--muted);font-size:.95rem}
+  .tabs{display:flex;gap:6px;padding:14px 32px 0;flex-wrap:wrap}
+  .tab-btn{padding:10px 18px;border:1px solid var(--line);background:var(--paper);cursor:pointer;
+    border-bottom:none;border-radius:6px 6px 0 0;font-size:.9rem;color:var(--muted)}
+  .tab-btn.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .panel{display:none;background:var(--paper);margin:0 32px;padding:24px;border:1px solid var(--line);
+    border-radius:0 6px 6px 6px}
+  .panel.active{display:block}
+  .row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;align-items:flex-end}
+  label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:4px}
+  input[type=text],input[type=url],input[type=number],select,textarea{
+    padding:8px 10px;border:1px solid var(--line);border-radius:4px;font-size:.92rem;width:100%;
+    font-family:inherit}
+  textarea{resize:vertical;min-height:60px}
+  button{padding:9px 16px;border:none;border-radius:4px;background:var(--accent);color:#fff;
+    cursor:pointer;font-size:.88rem}
+  button.secondary{background:var(--accent2)}
+  button.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+  button:hover{filter:brightness(1.08)}
+  .hint{font-size:.78rem;color:var(--muted);margin-top:4px}
+  .preview-grid{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .preview-grid img{width:110px;height:110px;object-fit:cover;border-radius:6px;border:1px solid var(--line)}
+  table{width:100%;border-collapse:collapse;margin-top:18px;font-size:.85rem}
+  th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+  th{background:var(--ink);color:#fff;font-weight:500}
+  td[contenteditable=true]{min-width:80px}
+  td[contenteditable=true]:focus{outline:2px solid var(--accent2)}
+  .toolbar{display:flex;justify-content:space-between;align-items:center;margin:18px 32px 6px;flex-wrap:wrap;gap:10px}
+  .toolbar small{color:var(--muted)}
+  .status{margin:0 32px;font-size:.85rem;color:var(--accent2)}
+  footer{margin:30px 0;text-align:center;color:var(--muted);font-size:.78rem}
+  .config-box{margin:0 32px 18px;padding:14px 18px;background:#fff8ec;border:1px solid #e8d9b8;border-radius:6px;font-size:.85rem}
+  .config-box code{background:#fff;padding:1px 5px;border-radius:3px;border:1px solid var(--line)}
 </style>
 </head>
 <body>
 
-<section id="practice">
-  <div class="topbar">
-    <div class="brand"><span class="dot"></span>Tri Thức — Phòng luyện thi</div>
-    <a class="back-link" href="index.html">← Về trang chủ</a>
-  </div>
+<header>
+  <h1>📋 Thu thập & chuẩn hóa dữ liệu đề thi</h1>
+  <p>Nhập từ ảnh / chụp trực tiếp / link / file (PDF, Word, Excel...) → chuẩn hóa thành bảng → đẩy lên Google Sheets</p>
+</header>
 
-  <div class="layout">
-    <aside class="panel">
-      <h2>Bảng điều khiển</h2>
-      <p class="panel-sub">Thiết lập thời gian và theo dõi bài làm</p>
+<div id="fileProtocolWarning" class="config-box" style="display:none;background:#fde8e8;border-color:#e8b8b8">
+  ⚠️ <b>Bạn đang mở file này trực tiếp (file://...)</b> — một số trình duyệt (đặc biệt Chrome) sẽ
+  chặn việc đọc file/ảnh hoặc tải thư viện ngoài khi chạy theo cách này, khiến nút tải ảnh/file
+  không hoạt động hoặc AI không phân tích được.<br>
+  <b>Cách khắc phục:</b> chạy trang qua một server cục bộ thay vì double-click mở file, ví dụ:
+  <ul style="margin:6px 0 0 18px;padding:0">
+    <li>Mở Terminal/CMD tại thư mục chứa file, gõ: <code>python -m http.server 8000</code> rồi mở
+      <code>http://localhost:8000/index.html</code></li>
+    <li>Hoặc dùng tiện ích "Live Server" trong VS Code</li>
+    <li>Hoặc upload file lên một dịch vụ hosting tĩnh (Netlify, GitHub Pages...)</li>
+  </ul>
+</div>
 
-      <div id="statusPill" class="status-pill"><span class="dot"></span>Chưa bắt đầu</div>
-
-      <div class="timer-display" id="timerDisplay">
-        <span class="timer-label">Thời gian còn lại</span>
-        <span id="timerText">45:00</span>
-      </div>
-
-      <div class="field-group">
-        <label for="durationSelect">Thời gian làm bài</label>
-        <select id="durationSelect">
-          <option value="45">45 phút</option>
-          <option value="60">60 phút</option>
-          <option value="90">90 phút</option>
-          <option value="120">120 phút</option>
-        </select>
-      </div>
-
-      <div class="btn-row">
-        <button class="btn btn-start" id="btnStart" onclick="startExam()">▶ Bắt đầu</button>
-        <button class="btn btn-submit" id="btnSubmit" onclick="submitExam()" disabled>✔ Nộp bài</button>
-        <button class="btn btn-reset" id="btnReset" onclick="resetExam()">↺ Làm lại</button>
-      </div>
-
-      <div class="divider"></div>
-
-      <div class="field-group">
-        <label for="madeInput">Điền mã đề</label>
-        <input class="madekit-input" id="madeInput" placeholder="VD: 101" maxlength="10" inputmode="text" list="madeCodesList" oninput="lookupMaDe()">
-        <datalist id="madeCodesList"></datalist>
-      </div>
-      <div class="field-group">
-        <label for="codeSelect">Chọn mã đề có sẵn</label>
-        <select class="madekit-input" id="codeSelect" onchange="onCodeSelectChange()">
-          <option value="">-- Chọn mã đề --</option>
-        </select>
-      </div>
-      <!-- removed answer visibility toggle; answers are not displayed on page -->
-      <div class="made-result" id="madeResult">
-        <b id="madeTitle">—</b>
-        <span id="madeDesc">Nhập mã đề hợp lệ để xem thông tin đề thi.</span>
-      </div>
-    </aside>
-
-    <div class="questions-column">
-      <div class="sheet-title">
-        <h1>PHIẾU TRẮ LỜI — Thông tin</h1>
-      </div>
-      <div class="sheet-grid" id="sheetGrid">
-        <div class="info-box">
-          <div class="info-head">Thông tin đề thi</div>
-          <div class="info-lines" id="examInfo">Nhập mã đề để xem chi tiết đề thi.</div>
-        </div>
-        <div class="info-box">
-          <div class="info-head">Danh sách mã đề</div>
-          <div class="info-lines" id="examCodes">Đang tải dữ liệu từ Google Sheet...</div>
-        </div>
-      </div>
-      <div class="info-box" style="margin-top:18px;">
-        <div class="info-head">Câu hỏi</div>
-        <div class="info-lines">
-          <div id="questionList" class="question-scroll">Nhập mã đề để lấy câu hỏi từ sheet.</div>
-          <input id="questionSlider" class="question-slider" type="range" min="0" value="0">
-        </div>
-      </div>
-      <p class="note-line">Chú ý: Thí sinh cần đọc kỹ hướng dẫn ở mặt sau Phiếu này.</p>
+<div class="config-box">
+  ⚙️ <b>Bước 1 – kết nối Google Sheets:</b> dán URL Web App (Apps Script) bạn đã deploy vào ô bên dưới.
+  Xem hướng dẫn lấy URL này trong file <code>apps-script.gs</code> đi kèm.
+  <div class="row" style="margin-top:8px">
+    <div style="flex:1;min-width:260px">
+      <label>Apps Script Web App URL</label>
+      <input type="url" id="scriptUrl" placeholder="https://script.google.com/macros/s/XXXX/exec">
     </div>
-
-    <main class="sheet-wrap">
-      <div class="section-title">PHẦN I</div>
-      <div class="part1-grid" id="part1Grid"></div>
-
-      <div class="section-title">PHẦN II</div>
-      <div class="part2-grid" id="part2Grid"></div>
-
-      <div class="section-title">PHẦN III</div>
-      <div class="part3-grid" id="part3Grid"></div>
-    </main>
+    <button class="ghost" onclick="saveUrl()">Lưu</button>
   </div>
+</div>
 
-  <footer class="app-footer">Tri Thức · Phiếu mô phỏng phục vụ luyện tập</footer>
-</section>
+<div class="config-box">
+  🤖 <b>Bước 2 – kết nối AI miễn phí (Google Gemini):</b>
+  Lấy API key free tại <a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a> (đăng nhập Google, bấm "Create API key").
+  Key chỉ lưu trong trình duyệt của bạn, không gửi đi đâu khác ngoài Google.
+  <div class="row" style="margin-top:8px">
+    <div style="flex:1;min-width:260px">
+      <label>Gemini API Key</label>
+      <input type="text" id="apiKey" placeholder="AIza...">
+    </div>
+    <button class="ghost" onclick="saveApiKey()">Lưu Key</button>
+  </div>
+  <p class="hint">AI sẽ: đọc nội dung ảnh/văn bản thô → tách đúng câu hỏi, 4 đáp án, đáp án đúng → nhận diện <b>Mã đề thi</b> của từng câu →
+  gộp các câu cùng mã đề lại với nhau và đánh số STT tăng dần trong mỗi mã đề. Gemini có hạn mức miễn phí hàng ngày, dùng vừa đủ để tránh bị chặn tạm thời.
+  <br><b>Lưu ý:</b> bạn cần tự nhập API key của riêng mình (mỗi người dùng key riêng để không bị chia sẻ hạn mức free với người khác).</p>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="image">📷 Ảnh / Chụp trực tiếp</button>
+  <button class="tab-btn" data-tab="link">🔗 Đường link</button>
+  <button class="tab-btn" data-tab="file">📄 File (PDF/Word/Excel...)</button>
+  <button class="tab-btn" data-tab="manual">✏️ Nhập tay nhanh</button>
+</div>
+
+<!-- TAB 1: IMAGE -->
+<div class="panel active" id="panel-image">
+  <div class="row">
+    <div>
+      <label>Tải ảnh từ máy</label>
+      <input type="file" id="imgUpload" accept="image/*" multiple>
+    </div>
+    <div>
+      <label>Chụp ảnh trực tiếp (camera)</label>
+      <input type="file" id="imgCamera" accept="image/*" capture="environment">
+    </div>
+  </div>
+  <p class="hint">Ảnh sẽ được lưu kèm dòng dữ liệu. Bạn cần tự đọc và gõ nội dung câu hỏi/đáp án vào bảng bên dưới
+  (trình duyệt không tự OCR được tiếng Việt chính xác). Mỗi ảnh tạo 1 dòng mới để bạn điền nội dung.</p>
+  <div class="preview-grid" id="imgPreview"></div>
+</div>
+
+<!-- TAB 2: LINK -->
+<div class="panel" id="panel-link">
+  <div class="row">
+    <div style="flex:1">
+      <label>Dán đường link đề thi (mỗi dòng 1 link)</label>
+      <textarea id="linkInput" placeholder="https://...&#10;https://..."></textarea>
+    </div>
+  </div>
+  <button onclick="addLinks()">+ Thêm vào bảng</button>
+  <p class="hint">Link được thêm làm ghi chú nguồn; nội dung câu hỏi vẫn cần điền tay vào bảng.</p>
+</div>
+
+<!-- TAB 3: FILE -->
+<div class="panel" id="panel-file">
+  <div class="row">
+    <div>
+      <label>Chọn file (.pdf, .docx, .xlsx, .csv, .txt)</label>
+      <input type="file" id="fileUpload" accept=".pdf,.docx,.xlsx,.xls,.csv,.txt" multiple>
+    </div>
+  </div>
+  <p class="hint">
+    - PDF/Word/TXT: nội dung văn bản sẽ được trích xuất thô vào 1 ô để bạn tách câu hỏi thủ công.<br>
+    - Excel/CSV: nếu đã có cột giống mẫu (Mã đề, STT, Nội dung câu hỏi, Đáp án A-D, Đáp án đúng) sẽ tự map vào bảng.
+  </p>
+  <div id="fileLog" class="hint"></div>
+</div>
+
+<!-- TAB 4: MANUAL -->
+<div class="panel" id="panel-manual">
+  <p class="hint">Thêm nhanh 1 dòng trống để gõ tay:</p>
+  <button onclick="addEmptyRow()">+ Thêm dòng trống</button>
+</div>
+
+<div class="toolbar">
+  <small id="rowCount">0 dòng dữ liệu</small>
+  <div>
+    <button class="secondary" onclick="analyzeWithAI()">🤖 Phân tích bằng AI</button>
+    <button class="ghost" onclick="sortRows()">↕ Sắp xếp theo Mã đề</button>
+    <button class="secondary" onclick="exportCSV()">⬇ Xuất CSV</button>
+    <button onclick="syncToSheet()">☁ Đồng bộ lên Google Sheets</button>
+  </div>
+</div>
+<div class="status" id="statusMsg"></div>
+
+<div style="margin:0 32px 40px;overflow-x:auto">
+<table id="dataTable">
+  <thead>
+    <tr>
+      <th>Mã đề thi</th><th>STT</th><th>Nội dung câu hỏi</th>
+      <th>Đáp án A</th><th>Đáp án B</th><th>Đáp án C</th><th>Đáp án D</th>
+      <th>Đáp án đúng</th><th>Nguồn / Ảnh</th><th></th>
+    </tr>
+  </thead>
+  <tbody id="tableBody"></tbody>
+</table>
+</div>
+
+<footer>Dữ liệu lưu tạm trong trình duyệt cho tới khi bạn đồng bộ lên Google Sheets.</footer>
 
 <script>
-  /* SBD block removed per user request */
+let rows = [];
+let rowId = 0;
 
-/* ---------------- Build PHẦN I (1-40, A B C D) ---------------- */
-const part1Grid = document.getElementById('part1Grid');
-const ranges = [[1,10],[11,20],[21,30],[31,40]];
-ranges.forEach(([start,end])=>{
-  const block = document.createElement('div');
-  block.className = 'qblock';
-  const letters = document.createElement('div');
-  letters.className = 'letters';
-  letters.innerHTML = '<span class="qnum-space"></span><span>A</span><span>B</span><span>C</span><span>D</span>';
-  block.appendChild(letters);
-  for(let q=start; q<=end; q++){
-    const row = document.createElement('div');
-    row.className = 'qrow';
-    row.innerHTML = `<div class="qn">${q}</div>`;
-    ['A','B','C','D'].forEach(opt=>{
-      const optWrap = document.createElement('div');
-      optWrap.className = 'opt';
-      const b = document.createElement('div');
-      b.className = 'bubble';
-      b.onclick = ()=>{
-        row.querySelectorAll('.bubble').forEach(x=>{ x.classList.remove('filled'); x.classList.remove('has-val'); });
-        b.classList.add('filled');
-        b.classList.add('has-val');
-      };
-      optWrap.appendChild(b);
-      row.appendChild(optWrap);
-    });
-    block.appendChild(row);
-  }
-  part1Grid.appendChild(block);
-});
-
-/* ---------------- Build PHẦN II (Câu 1-8, Đúng/Sai a-d) ---------------- */
-const part2Grid = document.getElementById('part2Grid');
-const pairs = [[1,2],[3,4],[5,6],[7,8]];
-pairs.forEach(pair=>{
-  const pairWrap = document.createElement('div');
-  pairWrap.className = 'p2-pair';
-  pair.forEach(cauNum=>{
-    const cauWrap = document.createElement('div');
-    cauWrap.className = 'p2-cau';
-    cauWrap.innerHTML = `<div class="cau-label">Câu ${cauNum}</div><div class="ds-head"><span>Đúng</span><span>Sai</span></div>`;
-    ['a)','b)','c)','d)'].forEach(letter=>{
-      const line = document.createElement('div');
-      line.className = 'p2-line';
-      line.innerHTML = `<span>${letter}</span>`;
-      const opts = document.createElement('div');
-      opts.className = 'opts';
-      ['Đ','S'].forEach(()=>{
-        const b = document.createElement('div');
-        b.className = 'bubble';
-        b.onclick = ()=>{
-          opts.querySelectorAll('.bubble').forEach(x=>{ x.classList.remove('filled'); x.classList.remove('has-val'); });
-          b.classList.add('filled');
-          b.classList.add('has-val');
-        };
-        opts.appendChild(b);
-      });
-      line.appendChild(opts);
-      cauWrap.appendChild(line);
-    });
-    pairWrap.appendChild(cauWrap);
-  });
-  part2Grid.appendChild(pairWrap);
-});
-
-/* ---------------- Build PHẦN III (Câu 1-6, số thập phân) ---------------- */
-const part3Grid = document.getElementById('part3Grid');
-let activePart3CellIdx = 0; // track active cell for keyboard input
-
-for(let cau=1; cau<=6; cau++){
-  const col = document.createElement('div');
-  col.className = 'p3-col';
-  col.innerHTML = `<div class="cau-label">Câu ${cau}</div>`;
-
-  const boxes = document.createElement('div');
-  boxes.className = 'p3-boxes';
-  for(let i=0;i<4;i++){
-    const cell = document.createElement('div');
-    cell.className = 'p3-digit-cell';
-    cell.contentEditable = 'true';
-    cell.dataset.cellIdx = i;
-    cell.style.cursor = 'text';
-    cell.style.userSelect = 'none';
-      cell.addEventListener('input', ()=>{
-        cell.classList.toggle('has-val', cell.textContent.trim().length>0);
-        // sync bubbles in rows for this column
-        const colIdx = parseInt(cell.dataset.cellIdx,10);
-        const val = normalizePart3Value(cell.textContent);
-        col.querySelectorAll('.p3-symrow').forEach(sr=>{
-          sr.querySelectorAll('.bubble').forEach(b=>{
-            if(b.dataset && String(b.dataset.col) === String(colIdx)){
-              const bd = b.dataset.digit ? normalizePart3Value(b.dataset.digit) : normalizePart3Value(b.textContent);
-              if(bd === val) b.classList.add('filled'); else b.classList.remove('filled');
-            }
-          });
-        });
-      });
-    cell.onkeydown = (e)=>{
-      if(e.key >= '0' && e.key <= '9'){
-        e.preventDefault();
-        cell.textContent = e.key;
-      } else if(e.key === '-' || e.key === '_'){
-        e.preventDefault();
-        cell.textContent = '−';
-      } else if(e.key === ',' || e.key === '.'){
-        e.preventDefault();
-        cell.textContent = ',';
-      } else if(e.key === 'ArrowRight' && i < 3){
-        e.preventDefault();
-        boxes.children[i+1].focus();
-      } else if(e.key === 'ArrowLeft' && i > 0){
-        e.preventDefault();
-        boxes.children[i-1].focus();
-      } else if(e.key === 'Backspace' || e.key === 'Delete'){
-        e.preventDefault();
-        cell.textContent = '';
-      }
-    };
-    cell.onpaste = (e)=>{ e.preventDefault(); };
-    cell.oncut = (e)=>{ e.preventDefault(); };
-    boxes.appendChild(cell);
-  }
-  col.appendChild(boxes);
-
-  const rowsWrap = document.createElement('div');
-  rowsWrap.className = 'p3-rows';
-
-  // "-" row: keep one bubble in column 1, placeholders for columns 2-4
-  const minusRow = document.createElement('div');
-  minusRow.className = 'p3-symrow';
-  minusRow.innerHTML = '<span class="sym">−</span>';
-  const firstBubble = document.createElement('div');
-  firstBubble.className = 'bubble';
-  firstBubble.dataset.col = 0;
-  firstBubble.dataset.digit = '−';
-  firstBubble.onclick = ()=>{
-    // toggle filled in this column
-    const colIdx = 0;
-    const filled = !firstBubble.classList.contains('filled');
-    col.querySelectorAll('.p3-symrow').forEach(sr=> sr.querySelectorAll('.bubble').forEach(b=>{ if(b.dataset && String(b.dataset.col) === String(colIdx)) b.classList.remove('filled'); }));
-    if(filled) firstBubble.classList.add('filled');
-    // set cell
-    const target = boxes.children[colIdx];
-    if(filled){ target.textContent = '−'; target.classList.add('has-val'); } else { target.textContent = ''; target.classList.remove('has-val'); }
+// ---- TAB SWITCH ----
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.onclick = ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
   };
-  minusRow.appendChild(firstBubble);
-  for(let i=0;i<3;i++){
-    const ph = document.createElement('div');
-    ph.style.width='19px'; ph.style.height='19px'; ph.style.visibility='hidden';
-    minusRow.appendChild(ph);
-  }
-  rowsWrap.appendChild(minusRow);
-
-  // "," row: place visible small bubbles in column 2 and 3, placeholders for col 1 & 4
-  const commaRow = document.createElement('div');
-  commaRow.className = 'p3-symrow';
-  const commaSym = document.createElement('span');
-  commaSym.className = 'sym';
-  commaSym.textContent = ',';
-  commaRow.appendChild(commaSym);
-  // col 1 placeholder (invisible)
-  const ph1 = document.createElement('div'); ph1.style.width='19px'; ph1.style.height='19px'; ph1.style.visibility='hidden'; commaRow.appendChild(ph1);
-  // col 2 & 3 bubbles (visible 'o')
-  // these bubbles correspond to columns 1 and 2
-  for(let j=1;j<=2;j++){
-    const b = document.createElement('div'); b.className='bubble';
-    b.dataset.col = j; b.dataset.digit = ',';
-    b.onclick = ()=>{
-      const colIdx = j;
-      const filled = !b.classList.contains('filled');
-      col.querySelectorAll('.p3-symrow').forEach(sr=> sr.querySelectorAll('.bubble').forEach(bb=>{ if(bb.dataset && String(bb.dataset.col) === String(colIdx)) bb.classList.remove('filled'); }));
-      if(filled) b.classList.add('filled');
-      const target = boxes.children[colIdx];
-      if(filled){ target.textContent = ','; target.classList.add('has-val'); } else { target.textContent = ''; target.classList.remove('has-val'); }
-    };
-    commaRow.appendChild(b);
-  }
-  // col 4 placeholder
-  const ph4 = document.createElement('div'); ph4.style.width='19px'; ph4.style.height='19px'; ph4.style.visibility='hidden'; commaRow.appendChild(ph4);
-  rowsWrap.appendChild(commaRow);
-
-  // digit rows 0-9
-  for(let d=0; d<=9; d++){
-    const dRow = document.createElement('div');
-    dRow.className = 'p3-symrow';
-    dRow.innerHTML = `<span class="sym">${d}</span>`;
-    for(let c=0;c<4;c++){
-      const b = document.createElement('div'); b.className='bubble';
-      b.dataset.col = c; b.dataset.digit = String(d);
-      b.onclick = ()=>{
-        const colIdx = c;
-        // clear other filled in same column
-        col.querySelectorAll('.p3-symrow').forEach(sr=> sr.querySelectorAll('.bubble').forEach(bb=>{ if(bb.dataset && String(bb.dataset.col) === String(colIdx)) bb.classList.remove('filled'); }));
-        b.classList.add('filled');
-        // set corresponding cell text
-        const target = boxes.children[colIdx];
-        target.textContent = String(d);
-        target.classList.add('has-val');
-      };
-      dRow.appendChild(b);
-    }
-    rowsWrap.appendChild(dRow);
-  }
-  col.appendChild(rowsWrap);
-  part3Grid.appendChild(col);
-}
-
-// Helper to normalize entered value for comparison
-function normalizePart3Value(str){
-  if(!str) return '';
-  return str.replace(/\u2212/g,'-').replace(/\./g,',').trim();
-}
-
-/* ---------------- Timer logic ---------------- */
-let timerInterval = null;
-let remainingSeconds = 45*60;
-let examRunning = false;
-
-const durationSelect = document.getElementById('durationSelect');
-const timerText = document.getElementById('timerText');
-const timerDisplay = document.getElementById('timerDisplay');
-const btnStart = document.getElementById('btnStart');
-const btnSubmit = document.getElementById('btnSubmit');
-const statusPill = document.getElementById('statusPill');
-
-function formatTime(sec){
-  const m = Math.floor(sec/60).toString().padStart(2,'0');
-  const s = (sec%60).toString().padStart(2,'0');
-  return `${m}:${s}`;
-}
-function updateTimerDisplay(){
-  timerText.textContent = formatTime(remainingSeconds);
-  timerDisplay.classList.toggle('danger', remainingSeconds <= 60 && remainingSeconds > 0);
-}
-durationSelect.addEventListener('change', ()=>{
-  if(!examRunning){
-    remainingSeconds = parseInt(durationSelect.value,10) * 60;
-    updateTimerDisplay();
-  }
 });
-updateTimerDisplay();
 
-function startExam(){
-  if(examRunning) return;
-  examRunning = true;
-  remainingSeconds = parseInt(durationSelect.value,10) * 60;
-  updateTimerDisplay();
-  btnStart.disabled = true;
-  btnSubmit.disabled = false;
-  durationSelect.disabled = true;
-  statusPill.classList.add('running');
-  statusPill.innerHTML = '<span class="dot"></span>Đang làm bài';
+function saveUrl(){
+  const url = document.getElementById('scriptUrl').value.trim();
+  localStorage.setItem('examScriptUrl', url);
+  setStatus('Đã lưu URL Apps Script.');
+}
+function saveApiKey(){
+  const key = document.getElementById('apiKey').value.trim();
+  localStorage.setItem('examApiKey', key);
+  setStatus('Đã lưu API Key (chỉ lưu trong trình duyệt này).');
+}
+window.onload = ()=>{
+  if(window.location.protocol === 'file:'){
+    document.getElementById('fileProtocolWarning').style.display = 'block';
+  }
+  const saved = localStorage.getItem('examScriptUrl');
+  if(saved) document.getElementById('scriptUrl').value = saved;
+  const savedKey = localStorage.getItem('examApiKey');
+  if(savedKey) document.getElementById('apiKey').value = savedKey;
+  render();
+};
 
-  timerInterval = setInterval(()=>{
-    remainingSeconds--;
-    updateTimerDisplay();
-    if(remainingSeconds <= 0){
-      clearInterval(timerInterval);
-      submitExam(true);
-    }
-  },1000);
+function setStatus(msg){
+  document.getElementById('statusMsg').textContent = msg;
 }
 
-function submitExam(auto){
-  if(!examRunning) return;
-  clearInterval(timerInterval);
-  examRunning = false;
-  btnStart.disabled = false;
-  btnSubmit.disabled = true;
-  durationSelect.disabled = false;
-  statusPill.classList.remove('running');
-  statusPill.innerHTML = '<span class="dot"></span>' + (auto ? 'Hết giờ — đã nộp bài' : 'Đã nộp bài');
+function newRow(data={}){
+  rowId++;
+  return Object.assign({
+    id: rowId, maDe:'', stt: rows.length+1, noiDung:'', a:'', b:'', c:'', d:'', dapAnDung:'', nguon:'', imgData:null
+  }, data);
+}
 
-  // build answer map from loaded MADE_DB for selected code
-  const code = (madeInput && madeInput.value.trim()) || Object.keys(MADE_DB)[0];
-  const answerMap = {};
-  if(code && MADE_DB[code]){
-    MADE_DB[code].questions.forEach(q=>{
-      const key = String(q.questionId).trim();
-      // prefer explicit answer field if present
-      answerMap[key] = String(q.answer || q.correct || q.correctAnswer || '').trim();
-    });
-  }
+function addEmptyRow(){
+  rows.push(newRow());
+  render();
+}
 
-  // PHẦN I: mark selected bubble and correct bubble
-  document.querySelectorAll('.qrow').forEach(row=>{
-    const qn = row.querySelector('.qn').textContent.trim();
-    const bubbles = Array.from(row.querySelectorAll('.bubble'));
-    bubbles.forEach(b=> b.classList.remove('sel-correct','sel-wrong','correct-answer'));
-    const selIdx = bubbles.findIndex(b=>b.classList.contains('filled'));
-    const ans = answerMap[qn];
-    if(selIdx >= 0){
-      const selected = ['A','B','C','D'][selIdx];
-      if(ans){
-        const normalizedAns = String(ans).trim().toUpperCase();
-        if(normalizedAns === selected) bubbles[selIdx].classList.add('sel-correct');
-        else {
-          bubbles[selIdx].classList.add('sel-wrong');
-          const correctIdx = ['A','B','C','D'].indexOf(normalizedAns);
-          if(correctIdx >= 0) bubbles[correctIdx].classList.add('correct-answer');
-        }
-      }
-    } else if(ans){
-      const correctIdx = ['A','B','C','D'].indexOf(String(ans).trim().toUpperCase());
-      if(correctIdx >= 0) bubbles[correctIdx].classList.add('correct-answer');
-    }
+// ---- IMAGE TAB ----
+function handleImageFiles(fileList){
+  Array.from(fileList).forEach(file=>{
+    const reader = new FileReader();
+    reader.onload = e=>{
+      rows.push(newRow({nguon: file.name, imgData: e.target.result}));
+      render();
+      const img = document.createElement('img');
+      img.src = e.target.result;
+      document.getElementById('imgPreview').appendChild(img);
+    };
+    reader.onerror = ()=>{
+      setStatus('❌ Không đọc được file ảnh "' + file.name + '". Nếu bạn đang mở file bằng cách double-click (file://), hãy thử chạy qua localhost (xem cảnh báo phía trên) hoặc dùng trình duyệt khác.');
+    };
+    reader.readAsDataURL(file);
   });
+}
+document.getElementById('imgUpload').onchange = e=>handleImageFiles(e.target.files);
+document.getElementById('imgCamera').onchange = e=>handleImageFiles(e.target.files);
 
-  // PHẦN II: each line has Đ/S options
-  document.querySelectorAll('.p2-pair .p2-cau').forEach(cauWrap=>{
-    const label = cauWrap.querySelector('.cau-label').textContent.replace(/[^0-9]/g,'');
-    cauWrap.querySelectorAll('.p2-line').forEach(line=>{
-      const opts = Array.from(line.querySelectorAll('.opts .bubble'));
-      opts.forEach(b=> b.classList.remove('sel-correct','sel-wrong','correct-answer'));
-      const sel = line.querySelector('.opts .bubble.filled');
-      const sub = line.querySelector('span').textContent.replace(')','').trim();
-      const key = label + sub[0];
-      const ans = answerMap[key];
-      if(sel){
-        const val = opts[0] === sel ? 'Đ' : 'S';
-        if(ans){
-          const aNorm = String(ans).trim().toUpperCase();
-          const correctIsTrue = (aNorm === 'Đ' || aNorm === 'D' || aNorm === 'TRUE' || aNorm === '1');
-          if((correctIsTrue && val === 'Đ') || (!correctIsTrue && val === 'S')){
-            sel.classList.add('sel-correct');
-          } else {
-            sel.classList.add('sel-wrong');
-            if(correctIsTrue) opts[0].classList.add('correct-answer'); else opts[1].classList.add('correct-answer');
-          }
-        }
-      } else if(ans){
-        const aNorm = String(ans).trim().toUpperCase();
-        const correctIsTrue = (aNorm === 'Đ' || aNorm === 'D' || aNorm === 'TRUE' || aNorm === '1');
-        if(correctIsTrue) opts[0].classList.add('correct-answer'); else opts[1].classList.add('correct-answer');
-      }
-    });
+// ---- LINK TAB ----
+function addLinks(){
+  const lines = document.getElementById('linkInput').value.split('\n').map(s=>s.trim()).filter(Boolean);
+  lines.forEach(link=>{
+    rows.push(newRow({nguon: link}));
   });
+  document.getElementById('linkInput').value='';
+  render();
+}
 
-  // PHẦN III: compare entered normalized values
-  document.querySelectorAll('.p3-col').forEach((col, idx)=>{
-    const boxes = col.querySelectorAll('.p3-digit-cell');
-    let entered = Array.from(boxes).map(c=>normalizePart3Value(c.textContent)).join('');
-    const qKey = String(idx+1);
-    const ans = answerMap[qKey] || answerMap['P3'+qKey] || answerMap['p3-'+qKey];
-    col.querySelectorAll('.p3-rows .bubble').forEach(b=>{ b.classList.remove('sel-correct','sel-wrong','correct-answer'); });
-    if(ans && String(ans).trim().length>0){
-      const normAns = normalizePart3Value(ans);
-      if(entered === normAns){
-        col.querySelectorAll('.p3-rows .bubble.filled').forEach(b=> b.classList.add('sel-correct'));
+// ---- FILE TAB ----
+document.getElementById('fileUpload').onchange = async e=>{
+  const log = document.getElementById('fileLog');
+  for(const file of e.target.files){
+    const ext = file.name.split('.').pop().toLowerCase();
+    try{
+      if(ext==='xlsx' || ext==='xls' || ext==='csv'){
+        await handleExcel(file);
+        log.innerHTML += `<div>✅ ${file.name}: đã thử map vào bảng.</div>`;
+      } else if(ext==='docx'){
+        await handleDocx(file);
+        log.innerHTML += `<div>✅ ${file.name}: đã trích văn bản (1 dòng).</div>`;
+      } else if(ext==='pdf'){
+        await handlePdf(file);
+        log.innerHTML += `<div>✅ ${file.name}: đã trích văn bản (1 dòng).</div>`;
+      } else if(ext==='txt'){
+        const text = await file.text();
+        rows.push(newRow({noiDung:text.slice(0,4000), nguon:file.name}));
+        log.innerHTML += `<div>✅ ${file.name}: đã thêm.</div>`;
       } else {
-        col.querySelectorAll('.p3-rows .bubble.filled').forEach(b=> b.classList.add('sel-wrong'));
-        const chars = normAns.split('');
-        chars.forEach((ch, pos)=>{
-          col.querySelectorAll('.p3-rows .bubble').forEach(b=>{
-            if(String(b.dataset && b.dataset.col) === String(pos)){
-              const bd = b.dataset.digit ? normalizePart3Value(b.dataset.digit) : normalizePart3Value(b.textContent);
-              if(bd === ch) b.classList.add('correct-answer');
-            }
-          });
+        log.innerHTML += `<div>⚠️ ${file.name}: định dạng chưa hỗ trợ.</div>`;
+      }
+    }catch(err){
+      log.innerHTML += `<div>❌ Lỗi đọc ${file.name}: ${err.message}</div>`;
+    }
+  }
+  render();
+};
+
+function handleExcel(file){
+  return new Promise((resolve,reject)=>{
+    const reader = new FileReader();
+    reader.onload = e=>{
+      try{
+        const wb = XLSX.read(e.target.result, {type:'array'});
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(sheet, {defval:''});
+        json.forEach(r=>{
+          rows.push(newRow({
+            maDe: r['Mã đề thi']||r['Ma de thi']||'',
+            stt: r['STT']|| (rows.length+1),
+            noiDung: r['Nội dung câu hỏi']||r['Noi dung cau hoi']||'',
+            a: r['Đáp án A']||r['Dap an A']||'',
+            b: r['Đáp án B']||r['Dap an B']||'',
+            c: r['Đáp án C']||r['Dap an C']||'',
+            d: r['Đáp án D']||r['Dap an D']||'',
+            dapAnDung: r['Đáp án đúng']||r['Dap an dung']||'',
+            nguon: file.name
+          }));
         });
-      }
+        resolve();
+      }catch(err){reject(err);}
+    };
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function handleDocx(file){
+  return new Promise((resolve,reject)=>{
+    const reader = new FileReader();
+    reader.onload = e=>{
+      mammoth.extractRawText({arrayBuffer:e.target.result})
+        .then(result=>{
+          rows.push(newRow({noiDung: result.value.slice(0,4000), nguon:file.name}));
+          resolve();
+        }).catch(reject);
+    };
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function handlePdf(file){
+  return new Promise((resolve,reject)=>{
+    if(window['pdfjsLib']){
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     }
-  });
-
-}
-
-
-function resetExam(){
-  clearInterval(timerInterval);
-  examRunning = false;
-  btnStart.disabled = false;
-  btnSubmit.disabled = true;
-  durationSelect.disabled = false;
-  remainingSeconds = parseInt(durationSelect.value,10) * 60;
-  updateTimerDisplay();
-  statusPill.classList.remove('running');
-  statusPill.innerHTML = '<span class="dot"></span>Chưa bắt đầu';
-  document.querySelectorAll('#practice .bubble.filled').forEach(b=>b.classList.remove('filled'));
-  document.getElementById('madeInput').value = '';
-  document.getElementById('madeResult').classList.remove('show');
-  // Clear PHẦN III marks and values
-  document.querySelectorAll('.p3-col').forEach(col=>{
-    col.classList.remove('correct','wrong');
-    col.querySelectorAll('.p3-digit-cell').forEach(c=>{ c.textContent=''; c.classList.remove('has-val'); });
-    col.querySelectorAll('.p3-rows .bubble').forEach(b=>b.classList.remove('filled'));
-    col.querySelectorAll('.p3-rows .bubble').forEach(b=> b.classList.remove('sel-correct','sel-wrong','correct-answer'));
-  });
-  // Clear PHẦN I marks and values
-  document.querySelectorAll('.qrow').forEach(row=>{
-    row.classList.remove('correct','wrong');
-    row.querySelectorAll('.bubble').forEach(b=>{ b.classList.remove('filled'); b.classList.remove('has-val'); b.classList.remove('sel-correct','sel-wrong','correct-answer'); });
-  });
-  // Clear PHẦN II marks and values
-  document.querySelectorAll('.p2-pair .p2-cau').forEach(cauWrap=>{
-    cauWrap.querySelectorAll('.p2-line').forEach(line=>{
-      line.classList.remove('correct','wrong');
-      line.querySelectorAll('.bubble').forEach(b=>{ b.classList.remove('filled'); b.classList.remove('has-val'); b.classList.remove('sel-correct','sel-wrong','correct-answer'); });
-    });
-  });
-}
-
-/* ---------------- Mã đề lookup ---------------- */
-let MADE_DB = {};
-
-const GOOGLE_SHEET_ID = '1pZAFGIvvUCZ-4He6N74_-flcGzoub-zf3tp0i1JKZTY';
-const GOOGLE_SHEET_GID = '185719639';
-
-const examInfo = document.getElementById('examInfo');
-const examCodes = document.getElementById('examCodes');
-const questionList = document.getElementById('questionList');
-const madeInput = document.getElementById('madeInput');
-const madeCodesList = document.getElementById('madeCodesList');
-const codeSelect = document.getElementById('codeSelect');
-
-function updateExamCodesList(){
-  if(!madeCodesList || !examCodes) return;
-  madeCodesList.innerHTML = '';
-  if(codeSelect) codeSelect.innerHTML = '<option value="">-- Chọn mã đề --</option>';
-  const keys = Object.keys(MADE_DB).sort();
-  if(keys.length === 0){
-    examCodes.textContent = 'Không có mã đề nào.';
-    return;
-  }
-  examCodes.textContent = keys.join(', ');
-  keys.forEach(code => {
-    const opt = document.createElement('option');
-    opt.value = code;
-    opt.textContent = code;
-    madeCodesList.appendChild(opt);
-    if(codeSelect){
-      const sel = document.createElement('option');
-      sel.value = code;
-      sel.textContent = code;
-      codeSelect.appendChild(sel);
-    }
-  });
-}
-
-function renderSelectedExam(code){
-  const entry = MADE_DB[code];
-  if(!entry){
-    if(examInfo) examInfo.textContent = 'Không tìm thấy mã đề này trong dữ liệu Sheet.';
-    if(questionList) questionList.textContent = 'Vui lòng nhập mã đề hợp lệ.';
-    return;
-  }
-  if(examInfo) examInfo.innerHTML = `<strong>Mã đề:</strong> ${code}<br><strong>Số câu hỏi:</strong> ${entry.questions.length}`;
-  if(entry.questions.length === 0){
-    if(questionList) questionList.textContent = 'Sheet chưa có câu hỏi cho mã đề này.';
-    return;
-  }
-  if(questionList) questionList.innerHTML = '';
-  entry.questions.forEach((q, idx) => {
-    const div = document.createElement('div');
-    div.style.marginBottom = '12px';
-    const qHtml = document.createElement('div');
-    qHtml.innerHTML = `<strong>${q.questionId}</strong>: ${q.questionText}`;
-    div.appendChild(qHtml);
-    const opts = document.createElement('div');
-    opts.style.marginLeft = '12px';
-    const labels = ['A','B','C','D'];
-    (q.options || []).forEach((opt, i) => {
-      const o = document.createElement('div');
-      o.innerHTML = `<span style="font-weight:700;">${labels[i] || ''}.</span> ${opt || ''}`;
-      opts.appendChild(o);
-    });
-    div.appendChild(opts);
-    questionList.appendChild(div);
-  });
-  // update slider bounds and ensure listeners
-  const slider = document.getElementById('questionSlider');
-  setTimeout(()=>{
-    if(slider && questionList){
-      slider.max = Math.max(0, questionList.scrollHeight - questionList.clientHeight);
-      slider.value = questionList.scrollTop;
-      slider.style.display = slider.max>0 ? 'block' : 'none';
-    }
-  }, 0);
-  setupQuestionSliderListeners();
-}
-
-function lookupMaDe(){
-  const val = madeInput.value.trim();
-  if(!val){
-    examInfo.textContent = 'Nhập mã đề để xem chi tiết đề thi.';
-    questionList.textContent = 'Nhập mã đề để lấy câu hỏi từ sheet.';
-    return;
-  }
-  renderSelectedExam(val);
-}
-
-function saveSheetData(sheetRows){
-  const data = {};
-  for(let i=1;i<sheetRows.length;i++){ // bắt đầu từ hàng thứ 2 (bao gồm câu 1 nếu nằm trên hàng 2)
-    const row = sheetRows[i];
-    const code = String(row[0] || '').trim();
-    const questionId = String(row[1] || '').trim(); // cột B
-    const questionText = String(row[2] || '').trim(); // cột C
-    const optionA = String(row[3] || '').trim(); // cột D
-    const optionB = String(row[4] || '').trim(); // cột E
-    const optionC = String(row[5] || '').trim(); // cột F
-    const optionD = String(row[6] || '').trim(); // cột G
-    const correct = String(row[7] || '').trim(); // cột H (đáp án đúng, ví dụ: A/B/C/D or Đ/S or numeric)
-    if(!code || !questionId) continue;
-    if(!data[code]) data[code] = { questions: [] };
-    data[code].questions.push({ questionId, questionText, options: [optionA, optionB, optionC, optionD], answer: correct });
-  }
-  MADE_DB = data;
-  updateExamCodesList();
-}
-
-function setupQuestionSliderListeners(){
-  if(window._questionSliderInited) return; window._questionSliderInited = true;
-  const slider = document.getElementById('questionSlider');
-  const qList = document.getElementById('questionList');
-  if(!slider || !qList) return;
-  slider.addEventListener('input', ()=>{ qList.scrollTop = Number(slider.value); });
-  qList.addEventListener('scroll', ()=>{ slider.value = qList.scrollTop; });
-  window.addEventListener('resize', ()=>{ setTimeout(()=>{ slider.max = Math.max(0, qList.scrollHeight - qList.clientHeight); },120); });
-}
-
-function parseCsv(text){
-  const rows = [];
-  let current = '';
-  let inQuotes = false;
-  const addCell = () => { rows[rows.length-1].push(current); current = ''; };
-  rows.push([]);
-  for(let i=0;i<text.length;i++){
-    const ch = text[i];
-    if(inQuotes){
-      if(ch === '"'){
-        if(text[i+1] === '"'){
-          current += '"';
-          i++;
-        } else {
-          inQuotes = false;
+    const reader = new FileReader();
+    reader.onload = async e=>{
+      try{
+        const pdf = await pdfjsLib.getDocument({data:e.target.result}).promise;
+        let text = '';
+        for(let i=1;i<=Math.min(pdf.numPages,15);i++){
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          text += content.items.map(it=>it.str).join(' ') + '\n';
         }
+        rows.push(newRow({noiDung: text.slice(0,4000), nguon:file.name}));
+        resolve();
+      }catch(err){reject(err);}
+    };
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+// ---- TABLE RENDER ----
+function render(){
+  const body = document.getElementById('tableBody');
+  body.innerHTML = '';
+  rows.forEach((r,idx)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td contenteditable="true" data-f="maDe">${r.maDe}</td>
+      <td contenteditable="true" data-f="stt">${r.stt}</td>
+      <td contenteditable="true" data-f="noiDung">${escapeHtml(r.noiDung)}</td>
+      <td contenteditable="true" data-f="a">${escapeHtml(r.a)}</td>
+      <td contenteditable="true" data-f="b">${escapeHtml(r.b)}</td>
+      <td contenteditable="true" data-f="c">${escapeHtml(r.c)}</td>
+      <td contenteditable="true" data-f="d">${escapeHtml(r.d)}</td>
+      <td contenteditable="true" data-f="dapAnDung">${escapeHtml(r.dapAnDung)}</td>
+      <td>${r.imgData?'<img src="'+r.imgData+'" style="width:60px;border-radius:4px">':escapeHtml(r.nguon)}</td>
+      <td><button class="ghost" onclick="removeRow(${r.id})">Xóa</button></td>
+    `;
+    tr.querySelectorAll('[contenteditable]').forEach(td=>{
+      td.oninput = ()=>{ r[td.dataset.f] = td.textContent; };
+    });
+    body.appendChild(tr);
+  });
+  document.getElementById('rowCount').textContent = rows.length + ' dòng dữ liệu';
+}
+function escapeHtml(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function removeRow(id){ rows = rows.filter(r=>r.id!==id); render(); }
+
+// ---- AI ANALYSIS (Gemini API) ----
+const AI_SYSTEM_PROMPT = `Bạn là trợ lý chuẩn hóa đề thi. Nhiệm vụ: đọc nội dung được cung cấp (có thể là ảnh chụp đề thi, hoặc văn bản thô trích từ PDF/Word) và trích xuất TẤT CẢ câu hỏi trắc nghiệm tìm thấy.
+Với mỗi câu hỏi, xác định:
+- maDe: Mã đề thi (nếu có ghi rõ trong tài liệu như "Mã đề: 101", "Mã đề thi 203"... nếu KHÔNG thấy thì để rỗng "")
+- stt: số thứ tự câu hỏi như trong tài liệu gốc (số nguyên)
+- noiDung: nội dung câu hỏi đầy đủ, đúng chính tả tiếng Việt
+- a, b, c, d: nội dung 4 đáp án (không kèm chữ A. B. C. D. ở đầu)
+- dapAnDung: chỉ ghi 1 ký tự A, B, C hoặc D nếu xác định được đáp án đúng từ tài liệu (in đậm, khoanh tròn, ký hiệu *, ghi chú đáp án...). Nếu không xác định được, để rỗng "".
+
+CHỈ trả về JSON thuần túy, là một mảng (array), không kèm giải thích, không markdown code fence. Định dạng:
+[{"maDe":"101","stt":1,"noiDung":"...","a":"...","b":"...","c":"...","d":"...","dapAnDung":"A"}, ...]
+Nếu không tìm thấy câu hỏi nào hợp lệ, trả về mảng rỗng [].`;
+
+const GEMINI_MODEL = 'gemini-flash-latest'; // model GA ổn định, có hạn mức free trên AI Studio
+
+async function callGeminiAPI(parts, apiKey){
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const body = {
+    system_instruction: { parts: [{ text: AI_SYSTEM_PROMPT }] },
+    contents: [
+      { role: 'user', parts: parts }
+    ],
+    generationConfig: {
+      temperature: 0.2,
+      maxOutputTokens: 8192,
+      topP: 0.95,
+      candidateCount: 1,
+      response_mime_type: 'application/json'
+    }
+  };
+  const res = await fetch(url, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  });
+  if(!res.ok){
+    let errText = await res.text();
+    try{
+      const errJson = JSON.parse(errText);
+      errText = (errJson.error && errJson.error.message) ? errJson.error.message : errText;
+    }catch(_){}
+    if(res.status === 400 && /API key/i.test(errText)){
+      throw new Error('API key không hợp lệ. Kiểm tra lại key ở Bước 2.');
+    }
+    if(res.status === 429){
+      throw new Error('Đã hết hạn mức miễn phí tạm thời (429), hãy đợi một lát rồi thử lại.');
+    }
+    throw new Error('API lỗi (' + res.status + '): ' + errText.slice(0,300));
+  }
+  const data = await res.json();
+
+  // Trường hợp bị chặn vì lý do an toàn / hết token
+  if(!data.candidates || data.candidates.length===0){
+    const blockReason = data.promptFeedback && data.promptFeedback.blockReason;
+    throw new Error('AI không trả về kết quả' + (blockReason ? ' (lý do: ' + blockReason + ')' : ' (có thể hết hạn mức free, thử lại sau).'));
+  }
+  const cand = data.candidates[0];
+  if(cand.finishReason === 'MAX_TOKENS'){
+    throw new Error('Phản hồi AI bị cắt vì quá dài (MAX_TOKENS). Thử chia nhỏ ảnh/văn bản nguồn.');
+  }
+  const textPart = cand.content && cand.content.parts && cand.content.parts.map(p=>p.text||'').join('');
+  if(!textPart){
+    throw new Error('Không có phản hồi văn bản từ AI (có thể bị chặn an toàn hoặc hết hạn mức free).');
+  }
+  let clean = textPart.trim().replace(/^```json/i, '').replace(/^```/, '').replace(/```$/,'').trim();
+  try{
+    const parsed = JSON.parse(clean);
+    return Array.isArray(parsed) ? parsed : (Array.isArray(parsed.questions) ? parsed.questions : []);
+  }catch(e){
+    const match = clean.match(/\[\s*\{[\s\S]*\}\s*\]/);
+    if(match) return JSON.parse(match[0]);
+    throw new Error('Không thể parse JSON từ phản hồi AI. Phản hồi raw: ' + clean.slice(0,800));
+  }
+}
+
+function dataUrlToBase64(dataUrl){
+  const parts = dataUrl.split(',');
+  const mime = parts[0].match(/data:(.*);base64/)[1];
+  return {mime, base64: parts[1]};
+}
+
+async function analyzeWithAI(){
+  const apiKey = (document.getElementById('apiKey').value || localStorage.getItem('examApiKey') || '').trim();
+  if(!apiKey){ setStatus('⚠️ Bạn cần nhập Gemini API Key ở Bước 2 trước.'); return; }
+  const candidates = rows.filter(r => r.imgData || (r.noiDung && r.noiDung.length > 20 && !r.a));
+  if(candidates.length===0){ setStatus('⚠️ Không có ảnh hoặc văn bản thô nào cần phân tích. Hãy tải ảnh/file trước.'); return; }
+
+  setStatus('🤖 AI đang phân tích ' + candidates.length + ' mục, vui lòng đợi...');
+  let newRows = [];
+
+  for(const cand of candidates){
+    try{
+      let parts = [];
+      if(cand.imgData){
+        const {mime, base64} = dataUrlToBase64(cand.imgData);
+        parts.push({ inline_data: { mime_type: mime, data: base64 } });
+        parts.push({ text: 'Đây là ảnh chụp đề thi. Hãy trích xuất câu hỏi theo đúng định dạng JSON đã yêu cầu.' });
       } else {
-        current += ch;
+        parts.push({ text: 'Văn bản trích từ tài liệu nguồn "'+ (cand.nguon||'') +'":\n\n' + cand.noiDung });
       }
-    } else {
-      if(ch === '"'){
-        inQuotes = true;
-      } else if(ch === ','){
-        addCell();
-      } else if(ch === '\r'){
-        continue;
-      } else if(ch === '\n'){
-        addCell();
-        rows.push([]);
-      } else {
-        current += ch;
-      }
+      const extracted = await callGeminiAPI(parts, apiKey);
+      extracted.forEach(q=>{
+        newRows.push(newRow({
+          maDe: q.maDe||'', stt: q.stt||'', noiDung: q.noiDung||'',
+          a:q.a||'', b:q.b||'', c:q.c||'', d:q.d||'', dapAnDung:q.dapAnDung||'',
+          nguon: cand.nguon
+        }));
+      });
+    }catch(err){
+      setStatus('❌ Lỗi phân tích "' + (cand.nguon||'mục') + '": ' + err.message);
+      await new Promise(r=>setTimeout(r,1500));
     }
   }
-  addCell();
-  if(rows[rows.length-1].length === 0) rows.pop();
-  return rows;
-}
 
-// removed unused header-detection helper (sheet uses fixed columns A-D starting row 3)
-
-async function fetchGoogleSheetCsv(sheetId,gid){
-  const url = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
-  const response = await fetch(url);
-  if(!response.ok) throw new Error(`Fetch failed with status ${response.status}`);
-  const text = await response.text();
-  return parseCsv(text);
-}
-
-async function loadMadeDataFromGoogleSheet(){
-  try {
-    const rows = await fetchGoogleSheetCsv(GOOGLE_SHEET_ID, GOOGLE_SHEET_GID);
-    if(rows.length < 2) {
-      if(examInfo) examInfo.textContent = 'Sheet không có dữ liệu hợp lệ.';
-      return;
-    }
-    if(rows.length < 3){
-      if(examInfo) examInfo.textContent = 'Sheet không có dữ liệu đủ của hàng 3 trở đi.';
-      return;
-    }
-    saveSheetData(rows);
-    console.log(`MADE_DB loaded from Google Sheet (${Object.keys(MADE_DB).length} mã đề).`);
-    if(examInfo && questionList){
-      examInfo.textContent = 'Dữ liệu Google Sheet đã nạp thành công. Nhập mã đề để xem câu hỏi.';
-      questionList.textContent = 'Nhập mã đề để hiển thị câu hỏi.';
-    }
-    updateExamCodesList();
-  } catch(err){
-    console.warn('Lỗi tải Google Sheet:', err);
-    if(examInfo) examInfo.textContent = 'Lỗi tải Google Sheet. Kiểm tra quyền truy cập và thử lại.';
-    if(questionList) questionList.textContent = 'Không thể nạp dữ liệu câu hỏi từ Sheet.';
+  if(newRows.length>0){
+    // loại bỏ các dòng nguồn thô đã được AI thay thế, giữ lại các dòng khác
+    rows = rows.filter(r => !candidates.includes(r));
+    rows = rows.concat(newRows);
+    sortRows();
+    setStatus('✅ AI đã trích xuất ' + newRows.length + ' câu hỏi, đã gộp theo Mã đề và sắp xếp.');
+  } else {
+    setStatus('⚠️ AI không trích xuất được câu hỏi nào hợp lệ.');
   }
 }
 
-loadMadeDataFromGoogleSheet();
+// ---- SORT BY MÃ ĐỀ + STT ----
+function sortRows(){
+  rows.sort((x,y)=>{
+    const mx = (x.maDe||'').toString();
+    const my = (y.maDe||'').toString();
+    if(mx !== my) return mx.localeCompare(my, 'vi', {numeric:true});
+    return (parseInt(x.stt)||0) - (parseInt(y.stt)||0);
+  });
+  // đánh lại STT tăng dần trong từng mã đề
+  let counters = {};
+  rows.forEach(r=>{
+    const key = r.maDe || '__none__';
+    counters[key] = (counters[key]||0) + 1;
+    r.stt = counters[key];
+  });
+  render();
+}
 
-function lookupMaDe(){
-  const val = madeInput.value.trim();
-  if(codeSelect) codeSelect.value = val;
-  if(!val){
-    if(examInfo) examInfo.textContent = 'Nhập mã đề để xem chi tiết đề thi.';
-    if(questionList) questionList.textContent = 'Nhập mã đề để lấy câu hỏi từ sheet.';
-    return;
+// ---- EXPORT CSV ----
+function exportCSV(){
+  const header = ['Mã đề thi','STT','Nội dung câu hỏi','Đáp án A','Đáp án B','Đáp án C','Đáp án D','Đáp án đúng'];
+  const lines = [header.join(',')];
+  rows.forEach((r)=>{
+    const vals = [r.maDe,r.stt,r.noiDung,r.a,r.b,r.c,r.d,r.dapAnDung].map(v=>'"'+String(v||'').replace(/"/g,'""')+'"');
+    lines.push(vals.join(','));
+  });
+  const blob = new Blob(["\uFEFF"+lines.join('\n')], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'de_thi.csv';
+  a.click();
+}
+
+// ---- SYNC TO GOOGLE SHEETS ----
+async function syncToSheet(){
+  const url = (document.getElementById('scriptUrl').value || localStorage.getItem('examScriptUrl') || '').trim();
+  if(!url){ setStatus('⚠️ Bạn cần dán URL Apps Script Web App trước.'); return; }
+  if(rows.length===0){ setStatus('⚠️ Chưa có dữ liệu để đồng bộ.'); return; }
+  setStatus('Đang đồng bộ...');
+  const payload = rows.map((r)=>({
+    maDe:r.maDe, stt: r.stt, noiDung:r.noiDung, a:r.a, b:r.b, c:r.c, d:r.d, dapAnDung:r.dapAnDung
+  }));
+  try{
+    const res = await fetch(url, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({rows: payload})
+    });
+    const text = await res.text();
+    setStatus('✅ Đã gửi ' + rows.length + ' dòng. Phản hồi: ' + text);
+  }catch(err){
+    setStatus('❌ Lỗi đồng bộ: ' + err.message + ' (kiểm tra lại URL / quyền truy cập deploy Apps Script)');
   }
-  renderSelectedExam(val);
 }
-
-function onCodeSelectChange(){
-  if(!codeSelect) return;
-  const code = codeSelect.value;
-  madeInput.value = code;
-  lookupMaDe();
-}
-
-// answers are not displayed; function removed
 </script>
 </body>
 </html>
